@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -40,12 +41,10 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload Windows installer and portable app
+      - name: Upload Windows installer only
         uses: actions/upload-artifact@v4
         with:
-          name: PDF-Splitter-Windows
-          path: |
-            installer/PDF-Splitter-Setup.exe
-            dist/PDF Splitter/**
+          name: PDF-Splitter-Installer
+          path: installer/PDF-Splitter-Setup.exe
           if-no-files-found: error
           retention-days: 30
