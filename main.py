@@ -1,4 +1,4 @@
-import sys, os, re
+import sys, os, re, json, urllib.request, tempfile, subprocess
 from pathlib import Path
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QImage, QPixmap, QIcon
@@ -9,9 +9,12 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from pypdf import PdfReader, PdfWriter
 import fitz
 
+APP_VERSION = "1.1.0"
+GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
+
 TEXT = {
  "ar": {
-  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك",
+  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -27,7 +30,7 @@ TEXT = {
   "select":"اختر ملفات PDF", "badpdf":"تعذر فتح الملف: ", "selected_count":"صفحة محددة"
  },
  "en": {
-  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer",
+  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -81,6 +84,9 @@ class App(QMainWindow):
         self.heading.setStyleSheet("font-size:23pt;font-weight:700;color:#123b63")
         top.addWidget(self.heading)
         top.addStretch()
+        self.update_button = QPushButton()
+        self.update_button.clicked.connect(self.check_updates)
+        top.addWidget(self.update_button)
         self.language = QComboBox()
         self.language.addItem("العربية", "ar")
         self.language.addItem("English", "en")
@@ -210,7 +216,7 @@ class App(QMainWindow):
     def retranslate(self):
         t=self.tr
         self.setWindowTitle(t("title")); self.heading.setText("PDF Splitter" if self.lang=="en" else "PDF Splitter | مقسّم PDF")
-        self.sub.setText(t("subtitle")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
+        self.sub.setText(t("subtitle")); self.update_button.setText(t("updates")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
         self.add.setText(t("add")); self.remove.setText(t("remove")); self.clear.setText(t("clear"))
         self.preview_hint.setText(t("no_preview")); self.options.setTitle(t("mode")); self.mode_label.setText(t("mode")+":")
         current=self.mode.currentData() if self.mode.count() else "ranges"
@@ -221,6 +227,59 @@ class App(QMainWindow):
         self.range_label.setText(t("range")); self.spin_label.setText(t("size"))
         self.out_label.setText(t("out")); self.browse.setText(t("browse")); self.unique.setText(t("overwrite"))
         self.start.setText(t("start")); self.status.setText(t("status")); self.mode_changed()
+
+    def check_updates(self):
+        try:
+            request = urllib.request.Request(
+                GITHUB_LATEST_RELEASE,
+                headers={"User-Agent": "PDF-Splitter-Updater", "Accept": "application/vnd.github+json"}
+            )
+            with urllib.request.urlopen(request, timeout=12) as response:
+                release = json.loads(response.read().decode("utf-8"))
+            latest = str(release.get("tag_name", "")).lstrip("v")
+            def version_tuple(value):
+                return tuple(int(part) for part in re.findall(r"\d+", value)[:3])
+            if not latest or version_tuple(latest) <= version_tuple(APP_VERSION):
+                QMessageBox.information(self, self.tr("title"), self.tr("up_to_date"))
+                return
+            answer = QMessageBox.question(
+                self, self.tr("title"),
+                self.tr("update_found") + latest + "\n" + self.tr("update_confirm"),
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+            )
+            if answer != QMessageBox.Yes:
+                return
+            assets = release.get("assets", [])
+            asset = next((item for item in assets if item.get("name") == "PDF-Splitter-Update.zip"), None)
+            if not asset:
+                raise RuntimeError("Update package is not attached to this release.")
+            updater = Path(sys.executable).resolve().parent / "PDF Splitter Updater.exe"
+            if not updater.exists():
+                QMessageBox.warning(self, self.tr("title"), self.tr("updater_missing"))
+                return
+            self.update_button.setEnabled(False)
+            self.status.setText(self.tr("update_found") + latest)
+            QApplication.processEvents()
+            fd, package_path = tempfile.mkstemp(prefix="pdfsplitter-update-", suffix=".zip")
+            os.close(fd)
+            download_request = urllib.request.Request(
+                asset["browser_download_url"], headers={"User-Agent": "PDF-Splitter-Updater"}
+            )
+            with urllib.request.urlopen(download_request, timeout=60) as response, open(package_path, "wb") as target:
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    target.write(chunk)
+            subprocess.Popen([
+                str(updater), "--pid", str(os.getpid()),
+                "--app-dir", str(Path(sys.executable).resolve().parent),
+                "--package", package_path
+            ], close_fds=True)
+            self.close()
+        except Exception as exc:
+            self.update_button.setEnabled(True)
+            QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
 
     def change_language(self):
         self.lang=self.language.currentData()
