@@ -19,6 +19,7 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64
 WizardStyle=modern
+SetupIconFile=assets\\pdf_splitter.ico
 
 [Files]
 Source: "dist\PDF Splitter\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
