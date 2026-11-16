@@ -1,4 +1,3 @@
-
 name: Build PDF Splitter for Windows
 
 on:
@@ -7,15 +6,16 @@ on:
     branches: [ main, master ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,13 +24,38 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.txt
 
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content version.txt -Raw).Trim()
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      - name: Build standalone Windows application
+      - name: Build main application
         run: pyinstaller --noconfirm --clean --windowed --name "PDF Splitter" --collect-all fitz --collect-all PySide6 main.py
+
+      - name: Build updater helper
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name "PDF Splitter Updater" --distpath "dist/PDF Splitter" updater.py
+
+      - name: Prepare differential update package
+        shell: pwsh
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force previous, release-assets | Out-Null
+          gh release download --repo "\${{ github.repository }}" --pattern "PDF-Splitter-Full.zip" --dir previous
+          if ($LASTEXITCODE -eq 0 -and (Test-Path "previous/PDF-Splitter-Full.zip")) {
+            Expand-Archive -Path "previous/PDF-Splitter-Full.zip" -DestinationPath "previous/app" -Force
+          } else {
+            Write-Host "No previous full release found; preparing a complete first update."
+          }
+          python make_update.py "dist/PDF Splitter" "previous/app" "release-assets"
 
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
@@ -41,7 +66,20 @@ jobs:
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Upload Windows installer only
+      - name: Publish versioned release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v\${{ steps.version.outputs.version }}
+          name: PDF Splitter v\${{ steps.version.outputs.version }}
+          target_commitish: \${{ github.sha }}
+          make_latest: true
+          overwrite_files: true
+          files: |
+            installer/PDF-Splitter-Setup.exe
+            release-assets/PDF-Splitter-Full.zip
+            release-assets/PDF-Splitter-Update.zip
+
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: PDF-Splitter-Installer
