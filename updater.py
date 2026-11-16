@@ -1,5 +1,6 @@
 import argparse
 import ctypes
+import hashlib
 import json
 import os
 import shutil
@@ -25,7 +26,7 @@ def wait_for_process(pid):
 
 def safe_target(root, relative):
     rel = PurePosixPath(relative)
-    if rel.is_absolute() or ".." in rel.parts:
+    if "\\" in relative or ":" in relative or "\x00" in relative or rel.is_absolute() or ".." in rel.parts:
         raise ValueError("Unsafe update path")
     target = (root / Path(*rel.parts)).resolve()
     if root.resolve() not in target.parents and target != root.resolve():
@@ -57,6 +58,7 @@ def main():
             manifest = json.loads(archive.read("update_manifest.json").decode("utf-8"))
             changed = manifest.get("files", [])
             deleted = manifest.get("deleted", [])
+            checksums = manifest.get("sha256", {})
             allowed = set(changed) | set(deleted) | {"update_manifest.json"}
             if not set(names).issubset(allowed):
                 raise ValueError("Unexpected file in update package")
@@ -65,6 +67,9 @@ def main():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(name) as src, open(target, "wb") as dst:
                     shutil.copyfileobj(src, dst)
+                digest = hashlib.sha256(target.read_bytes()).hexdigest()
+                if digest != checksums.get(name):
+                    raise ValueError("SHA-256 verification failed for " + name)
 
         touched = set(changed) | set(deleted)
         for relative in touched:
