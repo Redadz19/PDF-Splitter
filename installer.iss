@@ -1,9 +1,16 @@
 ; Inno Setup 6 script
+#define MyAppVersion GetEnv("APP_VERSION")
 [Setup]
 AppId={{8A11E3CE-DF9A-4C6D-9F21-0E6B72A9B210}
 AppName=PDF Splitter
-AppVersion=1.0.0
-AppPublisher=PDF Splitter
+AppVersion={#MyAppVersion}
+AppPublisher=Riadh Terrouche. RedaDZ19
+AppCopyright=Copyright (C) 2026 Riadh Terrouche. RedaDZ19
+VersionInfoCompany=Riadh Terrouche. RedaDZ19
+VersionInfoDescription=PDF Splitter - PDF document splitting application
+VersionInfoProductName=PDF Splitter
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}.0
 DefaultDirName={autopf}\PDF Splitter
 DefaultGroupName=PDF Splitter
 OutputDir=installer
