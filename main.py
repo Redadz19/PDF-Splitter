@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from pypdf import PdfReader, PdfWriter
 import fitz
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
@@ -52,6 +52,9 @@ class App(QMainWindow):
         super().__init__()
         self.lang = "ar"
         self.paths = []
+        icon_path = Path(sys.executable).resolve().parent / "pdf_splitter.ico"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
         self.selected_pages = {}
         self.resize(1380, 900)
         self.setMinimumSize(1100, 720)
