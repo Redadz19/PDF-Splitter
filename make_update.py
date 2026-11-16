@@ -32,7 +32,7 @@ changed = [
     if name not in previous_files or digest(path) != digest(previous_files[name])
 ]
 deleted = sorted(set(previous_files) - set(current_files))
-manifest = {"files": sorted(changed), "deleted": deleted}
+manifest = {"files": sorted(changed), "deleted": deleted, "sha256": {name: digest(current_files[name]) for name in changed}}
 
 with zipfile.ZipFile(out / "PDF-Splitter-Full.zip", "w", zipfile.ZIP_DEFLATED, compresslevel=6) as full:
     for name, path in current_files.items():
