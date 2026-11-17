@@ -50,6 +50,14 @@ jobs:
       - name: Build updater helper
         run: pyinstaller --noconfirm --clean --onefile --windowed --name "PDF Splitter Updater" --distpath "dist/PDF Splitter" updater.py
 
+      - name: Verify standalone updater
+        shell: pwsh
+        run: |
+          $updater = "dist/PDF Splitter/PDF Splitter Updater.exe"
+          if (!(Test-Path $updater)) { throw "Standalone updater executable was not produced: $updater" }
+          if ((Get-Item $updater).Length -le 0) { throw "Standalone updater executable is empty." }
+          Write-Host "Verified standalone updater: $updater"
+
       - name: Prepare differential update package
         shell: pwsh
         env:
@@ -70,7 +78,7 @@ jobs:
       - name: Build installer
         shell: pwsh
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer.iss"
+          & "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe" "installer.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Publish versioned release
@@ -83,8 +91,17 @@ jobs:
           overwrite_files: true
           files: |
             installer/PDF-Splitter-Setup.exe
+            dist/PDF Splitter/PDF Splitter Updater.exe
             release-assets/PDF-Splitter-Full.zip
             release-assets/PDF-Splitter-Update.zip
+
+      - name: Upload updater artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Splitter-Updater
+          path: dist/PDF Splitter/PDF Splitter Updater.exe
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
