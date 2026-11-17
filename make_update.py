@@ -20,6 +20,10 @@ current_files = {
     p.relative_to(current).as_posix(): p
     for p in current.rglob("*") if p.is_file()
 }
+
+# A running Windows executable cannot replace its own image file.
+# Keep the updater in full installers; update it only through a full install.
+UPDATER_EXECUTABLE = "PDF Splitter Updater.exe"
 previous_files = {}
 if previous and previous.exists():
     previous_files = {
@@ -29,9 +33,13 @@ if previous and previous.exists():
 
 changed = [
     name for name, path in current_files.items()
-    if name not in previous_files or digest(path) != digest(previous_files[name])
+    if name != UPDATER_EXECUTABLE
+    and (name not in previous_files or digest(path) != digest(previous_files[name]))
 ]
-deleted = sorted(set(previous_files) - set(current_files))
+deleted = sorted(
+    name for name in (set(previous_files) - set(current_files))
+    if name != UPDATER_EXECUTABLE
+)
 manifest = {"files": sorted(changed), "deleted": deleted, "sha256": {name: digest(current_files[name]) for name in changed}}
 
 with zipfile.ZipFile(out / "PDF-Splitter-Full.zip", "w", zipfile.ZIP_DEFLATED, compresslevel=6) as full:
