@@ -16,6 +16,7 @@ class License(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     devices: Mapped[list['Device']] = relationship(back_populates='license', cascade='all, delete-orphan')
+    verification_codes: Mapped[list['ActivationCode']] = relationship(back_populates='license', cascade='all, delete-orphan')
 
 class Device(Base):
     __tablename__ = 'devices'
@@ -28,3 +29,14 @@ class Device(Base):
     activated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     license: Mapped[License] = relationship(back_populates='devices')
+
+class ActivationCode(Base):
+    __tablename__ = 'activation_codes'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    license_id: Mapped[int] = mapped_column(ForeignKey('licenses.id', ondelete='CASCADE'), index=True)
+    code_hash: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    consumed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    license: Mapped[License] = relationship(back_populates='verification_codes')
