@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
     QScrollArea, QToolButton, QGridLayout, QTabWidget)
 from pypdf import PdfReader, PdfWriter
 import fitz
+from license_client import LicenseManager, LicenseError
 
 APP_VERSION = "1.2.3"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
@@ -15,6 +16,7 @@ GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/rele
 TEXT = {
  "ar": {
   "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
+  "license_tab":"الترخيص", "license_title":"تفعيل ترخيص WARAKA", "license_help":"أدخل الرقم التسلسلي والبريد المسجل. سنرسل رمز تحقق إلى بريدك الإلكتروني.", "license_serial":"الرقم التسلسلي", "license_email":"البريد الإلكتروني", "license_code":"رمز التحقق", "license_send_code":"إرسال رمز التحقق", "license_activate":"تفعيل الترخيص", "license_deactivate":"إلغاء تفعيل هذا الجهاز", "license_unconfigured":"لم يتم ربط خادم التراخيص بعد. ستظهر خاصية التفعيل بعد نشر الخادم وإضافة مفتاح التحقق.", "license_inactive":"هذا الجهاز غير مفعّل.", "license_active":"الترخيص مفعّل على هذا الجهاز.", "license_code_sent":"تم إرسال رمز التحقق إلى بريدك الإلكتروني.", "license_activate_first":"أدخل الرقم التسلسلي والبريد ورمز التحقق.", "license_confirm_deactivate":"هل تريد إلغاء تفعيل هذا الجهاز؟",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -31,6 +33,7 @@ TEXT = {
  },
  "en": {
   "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
+  "license_tab":"License", "license_title":"Activate WARAKA license", "license_help":"Enter your serial number and registered email. A verification code will be sent to your email.", "license_serial":"Serial number", "license_email":"Email address", "license_code":"Verification code", "license_send_code":"Send verification code", "license_activate":"Activate license", "license_deactivate":"Deactivate this device", "license_unconfigured":"The licensing server is not connected yet. Activation will be enabled after deployment and installation of the verification key.", "license_inactive":"This device is not activated.", "license_active":"The license is active on this device.", "license_code_sent":"A verification code has been sent to your email.", "license_activate_first":"Enter the serial number, email and verification code.", "license_confirm_deactivate":"Do you want to deactivate this device?",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -51,6 +54,7 @@ class App(QMainWindow):
     def __init__(self):
         super().__init__()
         self.lang = "ar"
+        self.license_manager = LicenseManager()
         self.paths = []
         icon_path = Path(sys.executable).resolve().parent / "pdf_splitter.ico"
         if icon_path.exists():
@@ -252,6 +256,53 @@ class App(QMainWindow):
         about_layout.addWidget(self.about_update_button, 0, Qt.AlignHCenter)
         about_layout.addStretch(1)
         self.tabs.addTab(about_page, "")
+
+        license_page = QWidget()
+        license_layout = QVBoxLayout(license_page)
+        license_layout.setContentsMargins(36, 30, 36, 30)
+        license_layout.setSpacing(14)
+        self.license_heading = QLabel()
+        self.license_heading.setStyleSheet("font-size:22pt;font-weight:700;color:#123b63")
+        self.license_heading.setAlignment(Qt.AlignCenter)
+        license_layout.addWidget(self.license_heading)
+        self.license_help_label = QLabel()
+        self.license_help_label.setWordWrap(True)
+        self.license_help_label.setAlignment(Qt.AlignCenter)
+        self.license_help_label.setStyleSheet("color:#63758b")
+        license_layout.addWidget(self.license_help_label)
+        self.license_status = QLabel()
+        self.license_status.setWordWrap(True)
+        self.license_status.setAlignment(Qt.AlignCenter)
+        self.license_status.setStyleSheet("font-size:11pt;font-weight:600;color:#1769aa;padding:8px")
+        license_layout.addWidget(self.license_status)
+        self.license_serial_label = QLabel()
+        self.license_serial = QLineEdit()
+        self.license_email_label = QLabel()
+        self.license_email = QLineEdit()
+        self.license_code_label = QLabel()
+        self.license_code = QLineEdit()
+        self.license_code.setMaxLength(6)
+        self.license_code.setMaximumWidth(240)
+        for label, field in (
+            (self.license_serial_label, self.license_serial),
+            (self.license_email_label, self.license_email),
+            (self.license_code_label, self.license_code),
+        ):
+            license_layout.addWidget(label)
+            license_layout.addWidget(field)
+        license_buttons = QHBoxLayout()
+        self.license_send_button = QPushButton()
+        self.license_send_button.clicked.connect(self.send_license_code)
+        self.license_activate_button = QPushButton()
+        self.license_activate_button.clicked.connect(self.activate_license)
+        self.license_deactivate_button = QPushButton()
+        self.license_deactivate_button.clicked.connect(self.deactivate_license)
+        license_buttons.addWidget(self.license_send_button)
+        license_buttons.addWidget(self.license_activate_button)
+        license_layout.addLayout(license_buttons)
+        license_layout.addWidget(self.license_deactivate_button, 0, Qt.AlignHCenter)
+        license_layout.addStretch(1)
+        self.tabs.addTab(license_page, "")
         layout.addWidget(self.tabs, 1)
 
     def retranslate(self):
@@ -263,6 +314,16 @@ class App(QMainWindow):
         self.about_version.setText(t("about_version") + APP_VERSION); self.about_publisher.setText(t("about_publisher"))
         self.about_website.setText(t("about_website") + '<a href="https://www.waraka.com">www.waraka.com</a>')
         self.about_update_button.setText(t("about_updates"))
+        self.tabs.setTabText(2, t("license_tab"))
+        self.license_heading.setText(t("license_title"))
+        self.license_help_label.setText(t("license_help"))
+        self.license_serial_label.setText(t("license_serial"))
+        self.license_email_label.setText(t("license_email"))
+        self.license_code_label.setText(t("license_code"))
+        self.license_send_button.setText(t("license_send_code"))
+        self.license_activate_button.setText(t("license_activate"))
+        self.license_deactivate_button.setText(t("license_deactivate"))
+        self.refresh_license_status()
         self.add.setText(t("add")); self.remove.setText(t("remove")); self.clear.setText(t("clear"))
         self.preview_hint.setText(t("no_preview")); self.options.setTitle(t("mode")); self.mode_label.setText(t("mode")+":")
         current=self.mode.currentData() if self.mode.count() else "ranges"
@@ -327,6 +388,75 @@ class App(QMainWindow):
         except Exception as exc:
             self.about_update_button.setEnabled(True)
             QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
+
+    def refresh_license_status(self):
+        if not self.license_manager.configured():
+            self.license_status.setText(self.tr("license_unconfigured"))
+            self.license_deactivate_button.setEnabled(False)
+            return
+        try:
+            record = self.license_manager.load_record()
+            if record:
+                self.license_status.setText(self.tr("license_active"))
+                self.license_serial.setText(record.get("serial", ""))
+                self.license_email.setText(record.get("email", ""))
+                self.license_deactivate_button.setEnabled(True)
+            else:
+                self.license_status.setText(self.tr("license_inactive"))
+                self.license_deactivate_button.setEnabled(False)
+        except LicenseError as exc:
+            self.license_status.setText(str(exc))
+            self.license_deactivate_button.setEnabled(False)
+
+    def send_license_code(self):
+        if not self.license_manager.api_base_url:
+            QMessageBox.information(self, self.tr("license_title"), self.tr("license_unconfigured"))
+            return
+        serial = self.license_serial.text().strip()
+        email = self.license_email.text().strip()
+        if not serial or not email:
+            QMessageBox.warning(self, self.tr("license_title"), self.tr("license_activate_first"))
+            return
+        try:
+            self.license_manager.request_otp(serial, email)
+            QMessageBox.information(self, self.tr("license_title"), self.tr("license_code_sent"))
+        except LicenseError as exc:
+            QMessageBox.warning(self, self.tr("license_title"), str(exc))
+
+    def activate_license(self):
+        serial = self.license_serial.text().strip()
+        email = self.license_email.text().strip()
+        code = self.license_code.text().strip()
+        if not serial or not email or len(code) != 6:
+            QMessageBox.warning(self, self.tr("license_title"), self.tr("license_activate_first"))
+            return
+        try:
+            self.license_manager.activate(serial, email, code)
+            self.license_status.setText(self.tr("license_active"))
+            self.license_deactivate_button.setEnabled(True)
+            self.license_code.clear()
+            QMessageBox.information(self, self.tr("license_title"), self.tr("license_active"))
+        except LicenseError as exc:
+            QMessageBox.warning(self, self.tr("license_title"), str(exc))
+
+    def deactivate_license(self):
+        answer = QMessageBox.question(
+            self,
+            self.tr("license_title"),
+            self.tr("license_confirm_deactivate"),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        try:
+            self.license_manager.deactivate()
+            self.license_serial.clear()
+            self.license_code.clear()
+            self.license_status.setText(self.tr("license_inactive"))
+            self.license_deactivate_button.setEnabled(False)
+        except LicenseError as exc:
+            QMessageBox.warning(self, self.tr("license_title"), str(exc))
 
     def change_language(self):
         self.lang=self.language.currentData()
@@ -415,6 +545,17 @@ class App(QMainWindow):
         return groups
 
     def run_split(self):
+        if self.license_manager.configured():
+            try:
+                license_record = self.license_manager.check_status()
+                if not license_record:
+                    self.tabs.setCurrentIndex(2)
+                    QMessageBox.warning(self, self.tr("license_title"), self.tr("license_inactive"))
+                    return
+            except LicenseError as exc:
+                self.tabs.setCurrentIndex(2)
+                QMessageBox.warning(self, self.tr("license_title"), str(exc))
+                return
         if not self.paths:
             QMessageBox.warning(self,self.tr("error"),self.tr("empty")); return
         outdir=self.output.text().strip()
