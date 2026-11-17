@@ -1,4 +1,5 @@
 import base64
+import os
 import unittest
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from license_client import (
     canonical_license_bytes,
     device_identifier,
     verify_license_signature,
+    _dpapi_transform,
 )
 
 
@@ -62,6 +64,13 @@ class LicenseClientTests(unittest.TestCase):
     def test_manager_requires_https_server(self):
         manager = LicenseManager(api_base_url="http://example.com", public_key_b64="test")
         self.assertFalse(manager.configured())
+
+    @unittest.skipUnless(os.name == "nt", "Windows DPAPI is available only on Windows")
+    def test_windows_dpapi_protect_unprotect_round_trip(self):
+        original = b"WARAKA local license storage test"
+        protected = _dpapi_transform(original, protect=True)
+        self.assertNotEqual(protected, original)
+        self.assertEqual(_dpapi_transform(protected, protect=False), original)
 
 
 if __name__ == "__main__":
