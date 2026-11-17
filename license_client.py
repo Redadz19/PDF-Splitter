@@ -208,6 +208,7 @@ class LicenseManager:
             or str(result.get("currency", "")).lower() != "dzd"
             or type(result.get("amount")) is not int
             or result.get("amount", 0) <= 0
+            or result.get("status") != "pending"
         ):
             raise LicenseError("The payment gateway returned an invalid checkout link.")
         return result
