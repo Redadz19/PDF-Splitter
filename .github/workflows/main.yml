@@ -44,7 +44,7 @@ jobs:
       - name: Test license client and application syntax
         run: |
           python -m py_compile main.py license_client.py
-          python -m pytest -q
+          python -m pytest -q tests
 
       - name: Generate application icon
         run: python generate_icon.py
