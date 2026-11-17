@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import zipfile
+from ctypes import wintypes
 from pathlib import Path, PurePosixPath
 
 def wait_for_process(pid):
@@ -17,18 +18,29 @@ def wait_for_process(pid):
     SYNCHRONIZE = 0x00100000
     WAIT_OBJECT_0 = 0x00000000
     WAIT_TIMEOUT = 0x00000102
-    handle = ctypes.windll.kernel32.OpenProcess(SYNCHRONIZE, False, pid)
+    ERROR_INVALID_PARAMETER = 87
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel32.WaitForSingleObject.restype = wintypes.DWORD
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+
+    handle = kernel32.OpenProcess(SYNCHRONIZE, False, pid)
     if not handle:
         error = ctypes.get_last_error()
-        raise OSError(error, "Cannot wait for the main application process to exit")
+        if error == ERROR_INVALID_PARAMETER:
+            return  # The application already exited before the updater started.
+        raise ctypes.WinError(error)
     try:
-        result = ctypes.windll.kernel32.WaitForSingleObject(handle, 60000)
+        result = kernel32.WaitForSingleObject(handle, 60000)
         if result == WAIT_TIMEOUT:
             raise TimeoutError("The main application is still running; update cancelled safely.")
         if result != WAIT_OBJECT_0:
-            raise OSError("Could not confirm that the main application has exited.")
+            raise ctypes.WinError(ctypes.get_last_error())
     finally:
-        ctypes.windll.kernel32.CloseHandle(handle)
+        kernel32.CloseHandle(handle)
 
 def safe_target(root, relative):
     rel = PurePosixPath(relative)
@@ -47,7 +59,6 @@ def main():
     args = parser.parse_args()
     app_dir = Path(args.app_dir).resolve()
     package = Path(args.package).resolve()
-    wait_for_process(args.pid)
 
     work = Path(tempfile.mkdtemp(prefix="pdfsplitter-update-"))
     extracted = work / "package"
@@ -57,6 +68,7 @@ def main():
     changed = []
     deleted = []
     try:
+        wait_for_process(args.pid)
         with zipfile.ZipFile(package, "r") as archive:
             names = archive.namelist()
             if "update_manifest.json" not in names:
