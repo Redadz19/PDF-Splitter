@@ -45,7 +45,7 @@ jobs:
         run: python generate_icon.py
 
       - name: Build main application
-        run: pyinstaller --noconfirm --clean --windowed --name "PDF Splitter" --icon=assets/pdf_splitter.ico --add-data "assets/pdf_splitter.ico;." --collect-all fitz --collect-all PySide6 main.py
+        run: pyinstaller --noconfirm --clean --windowed --name "PDF Splitter" --icon=assets/pdf_splitter.ico --add-data "assets/pdf_splitter.ico;." --collect-all fitz --collect-all PySide6 --collect-all certifi main.py
 
       - name: Build updater helper
         run: pyinstaller --noconfirm --clean --onefile --windowed --name "PDF Splitter Updater" --distpath "dist/PDF Splitter" updater.py
