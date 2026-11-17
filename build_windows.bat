@@ -5,7 +5,7 @@ py -m pip install --upgrade pip
 if errorlevel 1 goto failed
 py -m pip install -r requirements.txt pyinstaller
 if errorlevel 1 goto failed
-pyinstaller --noconfirm --clean --windowed --name "PDF Splitter" --collect-all fitz --collect-all PySide6 main.py
+pyinstaller --noconfirm --clean --windowed --name "PDF Splitter" --collect-all fitz --collect-all PySide6 --collect-all certifi --collect-all cryptography main.py
 if errorlevel 1 goto failed
 echo.
 echo Application built successfully: dist\PDF Splitter\PDF Splitter.exe
