@@ -15,14 +15,20 @@ def wait_for_process(pid):
     if os.name != "nt":
         return
     SYNCHRONIZE = 0x00100000
+    WAIT_OBJECT_0 = 0x00000000
+    WAIT_TIMEOUT = 0x00000102
     handle = ctypes.windll.kernel32.OpenProcess(SYNCHRONIZE, False, pid)
-    if handle:
-        try:
-            ctypes.windll.kernel32.WaitForSingleObject(handle, 30000)
-        finally:
-            ctypes.windll.kernel32.CloseHandle(handle)
-    else:
-        time.sleep(2)
+    if not handle:
+        error = ctypes.get_last_error()
+        raise OSError(error, "Cannot wait for the main application process to exit")
+    try:
+        result = ctypes.windll.kernel32.WaitForSingleObject(handle, 60000)
+        if result == WAIT_TIMEOUT:
+            raise TimeoutError("The main application is still running; update cancelled safely.")
+        if result != WAIT_OBJECT_0:
+            raise OSError("Could not confirm that the main application has exited.")
+    finally:
+        ctypes.windll.kernel32.CloseHandle(handle)
 
 def safe_target(root, relative):
     rel = PurePosixPath(relative)
@@ -59,6 +65,12 @@ def main():
             changed = manifest.get("files", [])
             deleted = manifest.get("deleted", [])
             checksums = manifest.get("sha256", {})
+            updater_name = "PDF Splitter Updater.exe"
+            if updater_name in changed or updater_name in deleted:
+                raise ValueError(
+                    "The updater executable cannot update itself. "
+                    "Install the full application package to update the updater safely."
+                )
             allowed = set(changed) | set(deleted) | {"update_manifest.json"}
             if not set(names).issubset(allowed):
                 raise ValueError("Unexpected file in update package")
