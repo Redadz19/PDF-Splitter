@@ -141,7 +141,7 @@ class LicenseManager:
         parsed = urllib.parse.urlparse(self.api_base_url)
         return parsed.scheme == "https" and bool(parsed.netloc) and bool(self.public_key_b64)
 
-    def _request(self, path: str, body: dict) -> dict:
+    def _request(self, path: str, body: dict, extra_headers: dict | None = None) -> dict:
         if not self.api_base_url:
             raise LicenseError("The WARAKA licensing server has not been configured.")
         parsed = urllib.parse.urlparse(self.api_base_url)
@@ -152,7 +152,11 @@ class LicenseManager:
         request = urllib.request.Request(
             url,
             data=raw,
-            headers={"Content-Type": "application/json", "User-Agent": "WARAKA-PDF-Splitter"},
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "WARAKA-PDF-Splitter",
+                **(extra_headers or {}),
+            },
             method="POST",
         )
         context = ssl.create_default_context(cafile=certifi.where())
@@ -170,6 +174,36 @@ class LicenseManager:
             raise LicenseError("Could not reach the WARAKA licensing server.") from exc
         if not isinstance(result, dict):
             raise LicenseError("The licensing server returned an invalid response.")
+        return result
+
+    def create_checkout(self, email: str, payment_method: str = "edahabia", locale: str = "ar") -> dict:
+        if payment_method not in {"edahabia", "cib"}:
+            raise LicenseError("Choose EDAHABIA or CIB for local payment.")
+        if locale not in {"ar", "en", "fr"}:
+            locale = "ar"
+        result = self._request(
+            "/v1/payments/chargily/checkout",
+            {
+                "email": email.strip(),
+                "payment_method": payment_method,
+                "locale": locale,
+            },
+            extra_headers={"Idempotency-Key": uuid.uuid4().hex},
+        )
+        checkout_url = result.get("checkout_url")
+        host = urllib.parse.urlparse(checkout_url).hostname if isinstance(checkout_url, str) else None
+        if (
+            not isinstance(result.get("payment_id"), str)
+            or not isinstance(checkout_url, str)
+            or urllib.parse.urlparse(checkout_url).scheme != "https"
+            or not host
+            or not (host == "chargily.dz" or host.endswith(".chargily.dz")
+                    or host == "chargily.net" or host.endswith(".chargily.net"))
+            or str(result.get("currency", "")).lower() != "dzd"
+            or not isinstance(result.get("amount"), int)
+            or result.get("amount", 0) <= 0
+        ):
+            raise LicenseError("The payment gateway returned an invalid checkout link.")
         return result
 
     def request_otp(self, serial: str, email: str) -> dict:
