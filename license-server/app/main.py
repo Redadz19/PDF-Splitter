@@ -9,12 +9,11 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from .database import Base, engine, get_db
+from .database import get_db
 from .models import ActivationCode, Device, License
 from .security import hash_serial, new_serial, public_key_b64, signed_license
 
 app = FastAPI(title='WARAKA License API', version='0.2.0', docs_url='/docs')
-Base.metadata.create_all(bind=engine)
 
 class ActivationCodeRequest(BaseModel):
     serial: str = Field(min_length=8, max_length=64)
