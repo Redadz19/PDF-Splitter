@@ -210,14 +210,19 @@ class LicenseManager:
             raise LicenseError("This WARAKA license has expired.")
 
     def _save_record(self, record: dict) -> None:
-        protected = _dpapi_transform(
-            json.dumps(record, separators=(",", ":")).encode("utf-8"),
-            protect=True,
-        )
-        self.license_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = self.license_path.with_suffix(".tmp")
-        temp_path.write_bytes(protected)
-        os.replace(temp_path, self.license_path)
+        try:
+            protected = _dpapi_transform(
+                json.dumps(record, separators=(",", ":")).encode("utf-8"),
+                protect=True,
+            )
+            self.license_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = self.license_path.with_suffix(".tmp")
+            temp_path.write_bytes(protected)
+            os.replace(temp_path, self.license_path)
+        except LicenseError:
+            raise
+        except Exception as exc:
+            raise LicenseError("Could not securely save the WARAKA license on this Windows account.") from exc
 
     def load_record(self) -> dict | None:
         if not self.license_path.exists():
@@ -260,7 +265,7 @@ class LicenseManager:
                 record["last_verified_at"] = result["server_time"]
                 self._save_record(record)
             except LicenseError as exc:
-                if exc.status_code is not None and exc.status_code < 500:
+                if exc.status_code is not None and exc.status_code < 500 and exc.status_code not in {408, 425, 429}:
                     raise
                 if elapsed_days > offline_grace_days:
                     raise LicenseError("The 14-day offline grace period has ended. Connect to the internet to verify WARAKA.") from exc
