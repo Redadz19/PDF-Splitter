@@ -29,3 +29,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run unit tests
         run: pytest -q
+      - name: Validate Alembic migration SQL
+        env:
+          DATABASE_URL: postgresql+psycopg://ci:ci@localhost/waraka
+        run: alembic upgrade --sql head
