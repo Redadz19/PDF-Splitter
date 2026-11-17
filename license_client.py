@@ -206,7 +206,7 @@ class LicenseManager:
             or not (host == "chargily.dz" or host.endswith(".chargily.dz")
                     or host == "chargily.net" or host.endswith(".chargily.net"))
             or str(result.get("currency", "")).lower() != "dzd"
-            or not isinstance(result.get("amount"), int)
+            or type(result.get("amount")) is not int
             or result.get("amount", 0) <= 0
         ):
             raise LicenseError("The payment gateway returned an invalid checkout link.")
