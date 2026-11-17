@@ -10,7 +10,7 @@ from pypdf import PdfReader, PdfWriter
 import fitz
 from license_client import LicenseManager, LicenseError
 
-APP_VERSION = "1.2.3"
+APP_VERSION = "1.2.4"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
