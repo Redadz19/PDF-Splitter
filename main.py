@@ -5,16 +5,16 @@ from PySide6.QtGui import QImage, QPixmap, QIcon
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFileDialog, QLineEdit, QComboBox, QSpinBox, QGroupBox,
     QMessageBox, QProgressBar, QCheckBox, QListWidget, QAbstractItemView,
-    QScrollArea, QToolButton, QGridLayout)
+    QScrollArea, QToolButton, QGridLayout, QTabWidget)
 from pypdf import PdfReader, PdfWriter
 import fitz
 
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
  "ar": {
-  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.",
+  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -30,7 +30,7 @@ TEXT = {
   "select":"اختر ملفات PDF", "badpdf":"تعذر فتح الملف: ", "selected_count":"صفحة محددة"
  },
  "en": {
-  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.",
+  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -87,9 +87,6 @@ class App(QMainWindow):
         self.heading.setStyleSheet("font-size:23pt;font-weight:700;color:#123b63")
         top.addWidget(self.heading)
         top.addStretch()
-        self.update_button = QPushButton()
-        self.update_button.clicked.connect(self.check_updates)
-        top.addWidget(self.update_button)
         self.language = QComboBox()
         self.language.addItem("العربية", "ar")
         self.language.addItem("English", "en")
@@ -202,7 +199,11 @@ class App(QMainWindow):
 
         columns.addWidget(self.preview_box, 7)
         columns.addWidget(sidebar, 4)
-        layout.addWidget(workspace, 1)
+        self.tabs = QTabWidget()
+        main_page = QWidget()
+        main_layout = QVBoxLayout(main_page)
+        main_layout.setContentsMargins(0, 8, 0, 0)
+        main_layout.addWidget(workspace, 1)
 
         self.progress = QProgressBar()
         self.progress.setValue(0)
@@ -214,12 +215,47 @@ class App(QMainWindow):
         self.start.clicked.connect(self.run_split)
         bottom.addWidget(self.status, 1)
         bottom.addWidget(self.start)
-        layout.addLayout(bottom)
+        main_layout.addWidget(self.progress)
+        main_layout.addLayout(bottom)
+        self.tabs.addTab(main_page, "")
+
+        about_page = QWidget()
+        about_layout = QVBoxLayout(about_page)
+        about_layout.setContentsMargins(36, 30, 36, 30)
+        about_layout.setSpacing(16)
+        self.about_heading = QLabel()
+        self.about_heading.setStyleSheet("font-size:25pt;font-weight:700;color:#123b63")
+        self.about_heading.setAlignment(Qt.AlignCenter)
+        about_layout.addWidget(self.about_heading)
+        self.about_description = QLabel()
+        self.about_description.setAlignment(Qt.AlignCenter)
+        self.about_description.setStyleSheet("font-size:12pt;color:#63758b")
+        about_layout.addWidget(self.about_description)
+        self.about_version = QLabel()
+        self.about_version.setAlignment(Qt.AlignCenter)
+        self.about_version.setStyleSheet("font-size:11pt;font-weight:600;color:#1769aa")
+        about_layout.addWidget(self.about_version)
+        self.about_publisher = QLabel()
+        self.about_publisher.setAlignment(Qt.AlignCenter)
+        self.about_publisher.setStyleSheet("font-size:11pt;color:#334155")
+        about_layout.addWidget(self.about_publisher)
+        about_layout.addSpacing(18)
+        self.about_update_button = QPushButton()
+        self.about_update_button.setMinimumWidth(240)
+        self.about_update_button.clicked.connect(self.check_updates)
+        about_layout.addWidget(self.about_update_button, 0, Qt.AlignHCenter)
+        about_layout.addStretch(1)
+        self.tabs.addTab(about_page, "")
+        layout.addWidget(self.tabs, 1)
 
     def retranslate(self):
         t=self.tr
         self.setWindowTitle(t("title")); self.heading.setText("PDF Splitter" if self.lang=="en" else "PDF Splitter | مقسّم PDF")
-        self.sub.setText(t("subtitle")); self.update_button.setText(t("updates")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
+        self.sub.setText(t("subtitle")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
+        self.tabs.setTabText(0, t("main_tab")); self.tabs.setTabText(1, t("about_tab"))
+        self.about_heading.setText(t("about_title")); self.about_description.setText(t("about_description"))
+        self.about_version.setText(t("about_version") + APP_VERSION); self.about_publisher.setText(t("about_publisher"))
+        self.about_update_button.setText(t("about_updates"))
         self.add.setText(t("add")); self.remove.setText(t("remove")); self.clear.setText(t("clear"))
         self.preview_hint.setText(t("no_preview")); self.options.setTitle(t("mode")); self.mode_label.setText(t("mode")+":")
         current=self.mode.currentData() if self.mode.count() else "ranges"
@@ -261,7 +297,7 @@ class App(QMainWindow):
             if not updater.exists():
                 QMessageBox.warning(self, self.tr("title"), self.tr("updater_missing"))
                 return
-            self.update_button.setEnabled(False)
+            self.about_update_button.setEnabled(False)
             self.status.setText(self.tr("update_found") + latest)
             QApplication.processEvents()
             fd, package_path = tempfile.mkstemp(prefix="pdfsplitter-update-", suffix=".zip")
@@ -282,7 +318,7 @@ class App(QMainWindow):
             ], close_fds=True)
             self.close()
         except Exception as exc:
-            self.update_button.setEnabled(True)
+            self.about_update_button.setEnabled(True)
             QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
 
     def change_language(self):
