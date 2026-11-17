@@ -1,7 +1,7 @@
 import base64
 import os
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -64,6 +64,33 @@ class LicenseClientTests(unittest.TestCase):
     def test_manager_requires_https_server(self):
         manager = LicenseManager(api_base_url="http://example.com", public_key_b64="test")
         self.assertFalse(manager.configured())
+
+    def test_offline_use_is_allowed_inside_grace_period(self):
+        manager = LicenseManager(api_base_url="https://api.example", public_key_b64="test")
+        last_verified = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+        record = {
+            "serial": "WRK-AAAA-BBBB-CCCC-DDDD",
+            "email": "buyer@example.com",
+            "license": {"issued_at": last_verified, "expires_at": None, "offline_grace_days": 14, "recheck_days": 7},
+            "last_verified_at": last_verified,
+        }
+        manager.load_record = lambda: record
+        manager._request = lambda *args, **kwargs: (_ for _ in ()).throw(LicenseError("offline"))
+        self.assertIs(manager.check_status(), record)
+
+    def test_offline_use_is_blocked_after_grace_period(self):
+        manager = LicenseManager(api_base_url="https://api.example", public_key_b64="test")
+        last_verified = (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
+        record = {
+            "serial": "WRK-AAAA-BBBB-CCCC-DDDD",
+            "email": "buyer@example.com",
+            "license": {"issued_at": last_verified, "expires_at": None, "offline_grace_days": 14, "recheck_days": 7},
+            "last_verified_at": last_verified,
+        }
+        manager.load_record = lambda: record
+        manager._request = lambda *args, **kwargs: (_ for _ in ()).throw(LicenseError("offline"))
+        with self.assertRaises(LicenseError):
+            manager.check_status()
 
     @unittest.skipUnless(os.name == "nt", "Windows DPAPI is available only on Windows")
     def test_windows_dpapi_protect_unprotect_round_trip(self):
