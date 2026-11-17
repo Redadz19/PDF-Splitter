@@ -77,7 +77,7 @@ def validate(data: ValidateRequest, db: Session = Depends(get_db)):
     db.commit()
     return {'status': 'valid', 'plan': lic.plan, 'checked_at': device.last_seen_at.isoformat()}
 
-@app.post('/v1/deactivate')
+@app.post('/v1/deactivate', dependencies=[Depends(require_admin)])
 def deactivate(data: DeviceRequest, db: Session = Depends(get_db)):
     device = db.scalar(select(Device).where(Device.license_id == data.license_id, Device.device_id == data.device_id, Device.active.is_(True)))
     if not device:
