@@ -176,7 +176,13 @@ class LicenseManager:
             raise LicenseError("The licensing server returned an invalid response.")
         return result
 
-    def create_checkout(self, email: str, payment_method: str = "edahabia", locale: str = "ar") -> dict:
+    def create_checkout(
+        self,
+        email: str,
+        payment_method: str = "edahabia",
+        locale: str = "ar",
+        idempotency_key: str | None = None,
+    ) -> dict:
         if payment_method not in {"edahabia", "cib"}:
             raise LicenseError("Choose EDAHABIA or CIB for local payment.")
         if locale not in {"ar", "en", "fr"}:
@@ -188,7 +194,7 @@ class LicenseManager:
                 "payment_method": payment_method,
                 "locale": locale,
             },
-            extra_headers={"Idempotency-Key": uuid.uuid4().hex},
+            extra_headers={"Idempotency-Key": idempotency_key or uuid.uuid4().hex},
         )
         checkout_url = result.get("checkout_url")
         host = urllib.parse.urlparse(checkout_url).hostname if isinstance(checkout_url, str) else None
