@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: waraka-license-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./license-server/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: LICENSE_PRIVATE_KEY
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: LICENSE_ISSUER
+        value: WARAKA
