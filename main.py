@@ -1,4 +1,4 @@
-import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess
+import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser
 from pathlib import Path
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QImage, QPixmap, QIcon
@@ -16,7 +16,7 @@ GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/rele
 TEXT = {
  "ar": {
   "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
-  "license_tab":"الترخيص", "license_title":"تفعيل ترخيص WARAKA", "license_help":"أدخل الرقم التسلسلي والبريد المسجل. سنرسل رمز تحقق إلى بريدك الإلكتروني.", "license_serial":"الرقم التسلسلي", "license_email":"البريد الإلكتروني", "license_code":"رمز التحقق", "license_send_code":"إرسال رمز التحقق", "license_activate":"تفعيل الترخيص", "license_deactivate":"إلغاء تفعيل هذا الجهاز", "license_unconfigured":"لم يتم ربط خادم التراخيص بعد. ستظهر خاصية التفعيل بعد نشر الخادم وإضافة مفتاح التحقق.", "license_inactive":"هذا الجهاز غير مفعّل.", "license_active":"الترخيص مفعّل على هذا الجهاز.", "license_code_sent":"تم إرسال رمز التحقق إلى بريدك الإلكتروني.", "license_activate_first":"أدخل الرقم التسلسلي والبريد ورمز التحقق.", "license_confirm_deactivate":"هل تريد إلغاء تفعيل هذا الجهاز؟",
+  "license_tab":"الترخيص", "license_title":"تفعيل ترخيص WARAKA", "license_help":"أدخل الرقم التسلسلي والبريد المسجل. سنرسل رمز تحقق إلى بريدك الإلكتروني.", "license_serial":"الرقم التسلسلي", "license_email":"البريد الإلكتروني", "license_code":"رمز التحقق", "license_payment_method":"طريقة الدفع", "license_edahabia":"البطاقة الذهبية", "license_cib":"بطاقة CIB", "license_buy":"شراء ترخيص دائم", "license_send_code":"إرسال رمز التحقق", "license_activate":"تفعيل الترخيص", "license_deactivate":"إلغاء تفعيل هذا الجهاز", "license_unconfigured":"لم يتم ربط خادم التراخيص بعد. ستظهر خاصية التفعيل بعد نشر الخادم وإضافة مفتاح التحقق.", "license_inactive":"هذا الجهاز غير مفعّل.", "license_active":"الترخيص مفعّل على هذا الجهاز.", "license_code_sent":"تم إرسال رمز التحقق إلى بريدك الإلكتروني.", "license_activate_first":"أدخل الرقم التسلسلي والبريد ورمز التحقق.", "license_confirm_deactivate":"هل تريد إلغاء تفعيل هذا الجهاز؟",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -33,7 +33,7 @@ TEXT = {
  },
  "en": {
   "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
-  "license_tab":"License", "license_title":"Activate WARAKA license", "license_help":"Enter your serial number and registered email. A verification code will be sent to your email.", "license_serial":"Serial number", "license_email":"Email address", "license_code":"Verification code", "license_send_code":"Send verification code", "license_activate":"Activate license", "license_deactivate":"Deactivate this device", "license_unconfigured":"The licensing server is not connected yet. Activation will be enabled after deployment and installation of the verification key.", "license_inactive":"This device is not activated.", "license_active":"The license is active on this device.", "license_code_sent":"A verification code has been sent to your email.", "license_activate_first":"Enter the serial number, email and verification code.", "license_confirm_deactivate":"Do you want to deactivate this device?",
+  "license_tab":"License", "license_title":"Activate WARAKA license", "license_help":"Enter your serial number and registered email. A verification code will be sent to your email.", "license_serial":"Serial number", "license_email":"Email address", "license_code":"Verification code", "license_payment_method":"Payment method", "license_edahabia":"EDAHABIA card", "license_cib":"CIB card", "license_buy":"Buy lifetime license", "license_send_code":"Send verification code", "license_activate":"Activate license", "license_deactivate":"Deactivate this device", "license_unconfigured":"The licensing server is not connected yet. Activation will be enabled after deployment and installation of the verification key.", "license_inactive":"This device is not activated.", "license_active":"The license is active on this device.", "license_code_sent":"A verification code has been sent to your email.", "license_activate_first":"Enter the serial number, email and verification code.", "license_confirm_deactivate":"Do you want to deactivate this device?",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -283,6 +283,12 @@ class App(QMainWindow):
         self.license_code = QLineEdit()
         self.license_code.setMaxLength(6)
         self.license_code.setMaximumWidth(240)
+        self.license_payment_method_label = QLabel()
+        self.license_payment_method = QComboBox()
+        self.license_payment_method.addItem("EDAHABIA", "edahabia")
+        self.license_payment_method.addItem("CIB", "cib")
+        license_layout.addWidget(self.license_payment_method_label)
+        license_layout.addWidget(self.license_payment_method)
         for label, field in (
             (self.license_serial_label, self.license_serial),
             (self.license_email_label, self.license_email),
@@ -291,12 +297,15 @@ class App(QMainWindow):
             license_layout.addWidget(label)
             license_layout.addWidget(field)
         license_buttons = QHBoxLayout()
+        self.license_buy_button = QPushButton()
+        self.license_buy_button.clicked.connect(self.buy_license)
         self.license_send_button = QPushButton()
         self.license_send_button.clicked.connect(self.send_license_code)
         self.license_activate_button = QPushButton()
         self.license_activate_button.clicked.connect(self.activate_license)
         self.license_deactivate_button = QPushButton()
         self.license_deactivate_button.clicked.connect(self.deactivate_license)
+        license_buttons.addWidget(self.license_buy_button)
         license_buttons.addWidget(self.license_send_button)
         license_buttons.addWidget(self.license_activate_button)
         license_layout.addLayout(license_buttons)
@@ -320,6 +329,11 @@ class App(QMainWindow):
         self.license_serial_label.setText(t("license_serial"))
         self.license_email_label.setText(t("license_email"))
         self.license_code_label.setText(t("license_code"))
+        self.license_payment_method_label.setText(t("license_payment_method"))
+        self.license_payment_method.setItemText(0, t("license_edahabia"))
+        self.license_payment_method.setItemText(1, t("license_cib"))
+        self.license_buy_button.setText(t("license_buy"))
+        self.license_buy_button.setEnabled(bool(self.license_manager.api_base_url))
         self.license_send_button.setText(t("license_send_code"))
         self.license_activate_button.setText(t("license_activate"))
         self.license_deactivate_button.setText(t("license_deactivate"))
@@ -407,6 +421,31 @@ class App(QMainWindow):
         except LicenseError as exc:
             self.license_status.setText(str(exc))
             self.license_deactivate_button.setEnabled(False)
+
+    def buy_license(self):
+        email = self.license_email.text().strip()
+        if not email:
+            QMessageBox.warning(self, self.tr("license_title"), self.tr("license_activate_first"))
+            return
+        if not self.license_manager.api_base_url:
+            QMessageBox.information(self, self.tr("license_title"), self.tr("license_unconfigured"))
+            return
+        try:
+            checkout = self.license_manager.create_checkout(
+                email,
+                self.license_payment_method.currentData(),
+                "ar" if self.lang == "ar" else "en",
+            )
+            checkout_url = checkout["checkout_url"]
+            webbrowser.open(checkout_url, new=2)
+            amount = checkout["amount"]
+            QMessageBox.information(
+                self,
+                self.tr("license_title"),
+                f"{self.tr('license_buy')} — {amount:,} DZD\n{checkout_url}",
+            )
+        except LicenseError as exc:
+            QMessageBox.warning(self, self.tr("license_title"), str(exc))
 
     def send_license_code(self):
         if not self.license_manager.api_base_url:
