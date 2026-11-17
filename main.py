@@ -1,4 +1,4 @@
-import sys, os, re, json, urllib.request, tempfile, subprocess
+import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess
 from pathlib import Path
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QImage, QPixmap, QIcon
@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from pypdf import PdfReader, PdfWriter
 import fitz
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
@@ -233,11 +233,12 @@ class App(QMainWindow):
 
     def check_updates(self):
         try:
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
             request = urllib.request.Request(
                 GITHUB_LATEST_RELEASE,
                 headers={"User-Agent": "PDF-Splitter-Updater", "Accept": "application/vnd.github+json"}
             )
-            with urllib.request.urlopen(request, timeout=12) as response:
+            with urllib.request.urlopen(request, timeout=12, context=ssl_context) as response:
                 release = json.loads(response.read().decode("utf-8"))
             latest = str(release.get("tag_name", "")).lstrip("v")
             def version_tuple(value):
@@ -268,7 +269,7 @@ class App(QMainWindow):
             download_request = urllib.request.Request(
                 asset["browser_download_url"], headers={"User-Agent": "PDF-Splitter-Updater"}
             )
-            with urllib.request.urlopen(download_request, timeout=60) as response, open(package_path, "wb") as target:
+            with urllib.request.urlopen(download_request, timeout=60, context=ssl_context) as response, open(package_path, "wb") as target:
                 while True:
                     chunk = response.read(1024 * 1024)
                     if not chunk:
