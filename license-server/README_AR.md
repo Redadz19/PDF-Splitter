@@ -9,17 +9,17 @@
 - حد أقصى ثلاثة أجهزة نشطة لكل ترخيص.
 - التحقق من الترخيص والجهاز وإيقاف الترخيص وإلغاء تفعيل الجهاز إدارياً.
 - توقيع رموز الترخيص باستخدام Ed25519.
+- إدارة بنية قاعدة البيانات عبر Alembic migrations؛ ينفذ Docker ترقية المخطط قبل تشغيل API.
 
 ## متغيرات البيئة
-اضبط المتغيرات التالية في Render أو ملف بيئة محلي:
 - DATABASE_URL: رابط Neon بصيغة postgresql+psycopg://... مع SSL.
 - LICENSE_PRIVATE_KEY: مفتاح Ed25519 الخاص بصيغة Base64؛ يبقى على الخادم.
 - ADMIN_API_KEY: مفتاح طويل عشوائي لنقاط الإدارة.
 - OTP_SECRET: سر عشوائي مستقل لا يقل عن 32 حرفاً.
-- SMTP_HOST وSMTP_PORT وSMTP_USER وSMTP_PASSWORD وSMTP_FROM: بيانات SMTP لإرسال رموز التحقق.
+- SMTP_HOST وSMTP_PORT وSMTP_USER وSMTP_PASSWORD وSMTP_FROM: بيانات SMTP.
 - LICENSE_ISSUER: اسم مصدر الترخيص.
 
-لا تضع أي قيمة سرية في GitHub أو داخل تطبيق Windows. ملف .env.example لا يحتوي أسراراً فعلية.
+لا تضع أي قيمة سرية في GitHub أو داخل تطبيق Windows.
 
 ## مسار التفعيل
 1. POST /v1/activation/request-code مع serial وemail.
@@ -44,10 +44,9 @@
 من مجلد license-server:
 ```bash
 pip install -r requirements.txt
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-يلزم ضبط DATABASE_URL قبل تشغيل التطبيق. ينشئ الإصدار التأسيسي الجداول تلقائياً عند بدء التشغيل. قبل الإنتاج ينبغي اعتماد Alembic migrations بدلاً من create_all، وإضافة اختبارات تلقائية ومحددات معدل على مستوى الشبكة وسجل تدقيق ولوحة إدارة.
-
 ## حالة المشروع
-هذه مرحلة تأسيسية وليست جاهزة للبيع أو الإنتاج بعد. لم يتم حتى الآن نشر الخدمة على Render أو إنشاء قاعدة Neon أو ربط تطبيق Windows. كما أن سياسة التحقق الدوري والعمل دون اتصال وعميل التحقق من Ed25519 داخل WARAKA Pro لم تدمج بعد.
+مرحلة تأسيسية قيد التطوير وليست جاهزة للبيع أو الإنتاج. لم يتم نشر الخدمة على Render أو إنشاء Neon أو ربط تطبيق Windows. يلزم استكمال اختبارات التكامل، rate limiting، سجل التدقيق، لوحة الإدارة، والتحقق الدوري والعمل دون اتصال.
