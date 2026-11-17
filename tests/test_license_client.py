@@ -65,6 +65,47 @@ class LicenseClientTests(unittest.TestCase):
         manager = LicenseManager(api_base_url="http://example.com", public_key_b64="test")
         self.assertFalse(manager.configured())
 
+    def test_create_checkout_uses_fixed_local_payment_methods_and_idempotency(self):
+        manager = LicenseManager(api_base_url="https://api.example", public_key_b64="test")
+        captured = {}
+
+        def fake_request(path, body, extra_headers=None):
+            captured["path"] = path
+            captured["body"] = body
+            captured["headers"] = extra_headers
+            return {
+                "payment_id": "payment-1",
+                "checkout_url": "https://pay.chargily.dz/test/checkouts/1/pay",
+                "amount": 2400,
+                "currency": "dzd",
+                "status": "pending",
+            }
+
+        manager._request = fake_request
+        result = manager.create_checkout(
+            "buyer@example.com",
+            "cib",
+            "ar",
+            "stable-idempotency-key",
+        )
+
+        self.assertEqual(captured["path"], "/v1/payments/chargily/checkout")
+        self.assertEqual(captured["body"]["payment_method"], "cib")
+        self.assertEqual(captured["body"]["email"], "buyer@example.com")
+        self.assertEqual(captured["headers"]["Idempotency-Key"], "stable-idempotency-key")
+        self.assertEqual(result["payment_id"], "payment-1")
+
+    def test_create_checkout_rejects_non_chargily_redirect(self):
+        manager = LicenseManager(api_base_url="https://api.example", public_key_b64="test")
+        manager._request = lambda *args, **kwargs: {
+            "payment_id": "payment-2",
+            "checkout_url": "https://evil.example/pay",
+            "amount": 2400,
+            "currency": "dzd",
+        }
+        with self.assertRaises(LicenseError):
+            manager.create_checkout("buyer@example.com", "edahabia")
+
     def test_offline_use_is_allowed_inside_grace_period(self):
         manager = LicenseManager(api_base_url="https://api.example", public_key_b64="test")
         last_verified = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
