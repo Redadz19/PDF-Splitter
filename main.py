@@ -1,4 +1,4 @@
-import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser
+import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser, uuid
 from pathlib import Path
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QImage, QPixmap, QIcon
@@ -55,6 +55,8 @@ class App(QMainWindow):
         super().__init__()
         self.lang = "ar"
         self.license_manager = LicenseManager()
+        self.purchase_idempotency_key = None
+        self.purchase_context = None
         self.paths = []
         icon_path = Path(sys.executable).resolve().parent / "pdf_splitter.ico"
         if icon_path.exists():
@@ -431,10 +433,16 @@ class App(QMainWindow):
             QMessageBox.information(self, self.tr("license_title"), self.tr("license_unconfigured"))
             return
         try:
+            payment_method = self.license_payment_method.currentData()
+            context = (email.lower(), payment_method)
+            if self.purchase_idempotency_key is None or self.purchase_context != context:
+                self.purchase_idempotency_key = uuid.uuid4().hex
+                self.purchase_context = context
             checkout = self.license_manager.create_checkout(
                 email,
-                self.license_payment_method.currentData(),
+                payment_method,
                 "ar" if self.lang == "ar" else "en",
+                self.purchase_idempotency_key,
             )
             checkout_url = checkout["checkout_url"]
             webbrowser.open(checkout_url, new=2)
