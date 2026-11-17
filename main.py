@@ -409,6 +409,7 @@ class App(QMainWindow):
         if not self.license_manager.configured():
             self.license_status.setText(self.tr("license_unconfigured"))
             self.license_deactivate_button.setEnabled(False)
+            self.license_buy_button.setEnabled(bool(self.license_manager.api_base_url))
             return
         try:
             record = self.license_manager.load_record()
@@ -417,12 +418,15 @@ class App(QMainWindow):
                 self.license_serial.setText(record.get("serial", ""))
                 self.license_email.setText(record.get("email", ""))
                 self.license_deactivate_button.setEnabled(True)
+                self.license_buy_button.setEnabled(False)
             else:
                 self.license_status.setText(self.tr("license_inactive"))
                 self.license_deactivate_button.setEnabled(False)
+                self.license_buy_button.setEnabled(bool(self.license_manager.api_base_url))
         except LicenseError as exc:
             self.license_status.setText(str(exc))
             self.license_deactivate_button.setEnabled(False)
+            self.license_buy_button.setEnabled(bool(self.license_manager.api_base_url))
 
     def buy_license(self):
         email = self.license_email.text().strip()
@@ -481,6 +485,7 @@ class App(QMainWindow):
             self.license_manager.activate(serial, email, code)
             self.license_status.setText(self.tr("license_active"))
             self.license_deactivate_button.setEnabled(True)
+            self.license_buy_button.setEnabled(False)
             self.license_code.clear()
             QMessageBox.information(self, self.tr("license_title"), self.tr("license_active"))
         except LicenseError as exc:
@@ -502,6 +507,7 @@ class App(QMainWindow):
             self.license_code.clear()
             self.license_status.setText(self.tr("license_inactive"))
             self.license_deactivate_button.setEnabled(False)
+            self.license_buy_button.setEnabled(bool(self.license_manager.api_base_url))
         except LicenseError as exc:
             QMessageBox.warning(self, self.tr("license_title"), str(exc))
 
