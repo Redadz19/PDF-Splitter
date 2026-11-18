@@ -1,6 +1,6 @@
 import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser, uuid
 from pathlib import Path
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QRectF
 from PySide6.QtGui import QImage, QPixmap, QIcon, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -84,7 +84,12 @@ class App(QMainWindow):
         image = QImage(size, QImage.Format_ARGB32)
         image.fill(Qt.transparent)
         painter = QPainter(image)
-        renderer.render(painter)
+        source_size = renderer.defaultSize()
+        scale = min(size.width() / source_size.width(), size.height() / source_size.height())
+        width = source_size.width() * scale
+        height = source_size.height() * scale
+        target = QRectF((size.width() - width) / 2, (size.height() - height) / 2, width, height)
+        renderer.render(painter, target)
         painter.end()
         return QPixmap.fromImage(image)
 
