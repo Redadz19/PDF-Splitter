@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
 from pypdf import PdfReader, PdfWriter
 import fitz
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
