@@ -1,6 +1,6 @@
 from pathlib import Path
-from PySide6.QtCore import QRectF
-from PySide6.QtGui import QGuiApplication, QImage, QPainter, QColor, QPen, QBrush, Qt
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QGuiApplication, QImage, QPainter, QColor, QPen, QBrush
 from PySide6.QtSvg import QSvgRenderer
 from PIL import Image
 
