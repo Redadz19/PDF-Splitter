@@ -1,7 +1,8 @@
 import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser, uuid
 from pathlib import Path
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QImage, QPixmap, QIcon
+from PySide6.QtGui import QImage, QPixmap, QIcon, QPainter
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFileDialog, QLineEdit, QComboBox, QSpinBox, QGroupBox,
     QMessageBox, QProgressBar, QCheckBox, QListWidget, QAbstractItemView,
@@ -78,6 +79,15 @@ class App(QMainWindow):
     def tr(self, key):
         return TEXT[self.lang][key]
 
+    def render_logo(self, size):
+        renderer = QSvgRenderer(str(self.asset_dir / "waraka_logo.svg"))
+        image = QImage(size, QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+        painter = QPainter(image)
+        renderer.render(painter)
+        painter.end()
+        return QPixmap.fromImage(image)
+
     def build_ui(self):
         root = QWidget()
         self.setCentralWidget(root)
@@ -88,9 +98,9 @@ class App(QMainWindow):
         top = QHBoxLayout()
         self.logo = QLabel()
         self.logo.setFixedSize(58, 66)
-        logo_path = self.asset_dir / "waraka_logo.png"
+        logo_path = self.asset_dir / "waraka_logo.svg"
         if logo_path.exists():
-            self.logo.setPixmap(QPixmap(str(logo_path)).scaled(48, 62, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.logo.setPixmap(self.render_logo(QSize(48, 62)))
         self.logo.setAlignment(Qt.AlignCenter)
         top.addWidget(self.logo)
         self.heading = QLabel()
@@ -236,7 +246,7 @@ class App(QMainWindow):
         self.about_logo = QLabel()
         self.about_logo.setAlignment(Qt.AlignCenter)
         if logo_path.exists():
-            self.about_logo.setPixmap(QPixmap(str(logo_path)).scaled(112, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.about_logo.setPixmap(self.render_logo(QSize(112, 150)))
         about_layout.addWidget(self.about_logo)
         self.about_heading = QLabel()
         self.about_heading.setStyleSheet("font-size:25pt;font-weight:700;color:#123b63")
