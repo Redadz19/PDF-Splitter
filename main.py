@@ -15,7 +15,6 @@ GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/rele
 TEXT = {
  "ar": {
   "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
-  "license_tab":"الترخيص", "license_title":"تفعيل ترخيص WARAKA", "license_help":"يمكنك شراء ترخيص دائم بالبطاقة الذهبية أو CIB، أو إدخال رقم ترخيصك والبريد المسجل لتفعيله.", "license_serial":"الرقم التسلسلي", "license_email":"البريد الإلكتروني", "license_code":"رمز التحقق", "license_payment_method":"طريقة الدفع", "license_edahabia":"البطاقة الذهبية", "license_cib":"بطاقة CIB", "license_buy":"شراء ترخيص دائم", "license_send_code":"إرسال رمز التحقق", "license_activate":"تفعيل الترخيص", "license_deactivate":"إلغاء تفعيل هذا الجهاز", "license_unconfigured":"لم يتم ربط خادم التراخيص بعد. ستظهر خاصية التفعيل بعد نشر الخادم وإضافة مفتاح التحقق.", "license_inactive":"هذا الجهاز غير مفعّل.", "license_active":"الترخيص مفعّل على هذا الجهاز.", "license_code_sent":"تم إرسال رمز التحقق إلى بريدك الإلكتروني.", "license_activate_first":"أدخل الرقم التسلسلي والبريد ورمز التحقق.", "license_confirm_deactivate":"هل تريد إلغاء تفعيل هذا الجهاز؟",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -32,7 +31,6 @@ TEXT = {
  },
  "en": {
   "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
-  "license_tab":"License", "license_title":"Activate WARAKA license", "license_help":"Buy a lifetime license with EDAHABIA or CIB, or enter your serial number and registered email to activate it.", "license_serial":"Serial number", "license_email":"Email address", "license_code":"Verification code", "license_payment_method":"Payment method", "license_edahabia":"EDAHABIA card", "license_cib":"CIB card", "license_buy":"Buy lifetime license", "license_send_code":"Send verification code", "license_activate":"Activate license", "license_deactivate":"Deactivate this device", "license_unconfigured":"The licensing server is not connected yet. Activation will be enabled after deployment and installation of the verification key.", "license_inactive":"This device is not activated.", "license_active":"The license is active on this device.", "license_code_sent":"A verification code has been sent to your email.", "license_activate_first":"Enter the serial number, email and verification code.", "license_confirm_deactivate":"Do you want to deactivate this device?",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -54,7 +52,10 @@ class App(QMainWindow):
         super().__init__()
         self.lang = "ar"
         self.paths = []
-        icon_path = Path(sys.executable).resolve().parent / "pdf_splitter.ico"
+        self.asset_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "assets"
+        icon_path = self.asset_dir / "waraka.ico"
+        if not icon_path.exists():
+            icon_path = Path(sys.executable).resolve().parent / "waraka.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         self.selected_pages = {}
@@ -85,6 +86,13 @@ class App(QMainWindow):
         layout.setSpacing(9)
 
         top = QHBoxLayout()
+        self.logo = QLabel()
+        self.logo.setFixedSize(58, 66)
+        logo_path = self.asset_dir / "waraka_logo.png"
+        if logo_path.exists():
+            self.logo.setPixmap(QPixmap(str(logo_path)).scaled(48, 62, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.logo.setAlignment(Qt.AlignCenter)
+        top.addWidget(self.logo)
         self.heading = QLabel()
         self.heading.setStyleSheet("font-size:23pt;font-weight:700;color:#123b63")
         top.addWidget(self.heading)
@@ -225,6 +233,11 @@ class App(QMainWindow):
         about_layout = QVBoxLayout(about_page)
         about_layout.setContentsMargins(36, 30, 36, 30)
         about_layout.setSpacing(16)
+        self.about_logo = QLabel()
+        self.about_logo.setAlignment(Qt.AlignCenter)
+        if logo_path.exists():
+            self.about_logo.setPixmap(QPixmap(str(logo_path)).scaled(112, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        about_layout.addWidget(self.about_logo)
         self.about_heading = QLabel()
         self.about_heading.setStyleSheet("font-size:25pt;font-weight:700;color:#123b63")
         self.about_heading.setAlignment(Qt.AlignCenter)
