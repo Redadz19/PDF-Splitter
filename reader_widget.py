@@ -73,6 +73,8 @@ class ReaderWidget(QWidget):
         self.thumbnails.setIconSize(QSize(92, 130))
         self.thumbnails.setSpacing(5)
         self.thumbnails.currentRowChanged.connect(self.thumbnail_selected)
+        self.thumbnails.verticalScrollBar().valueChanged.connect(self.refresh_visible_thumbnails)
+        self._thumbnail_ready = set()
         splitter.addWidget(self.thumbnails)
 
         self.scroll = QScrollArea()
@@ -148,20 +150,44 @@ class ReaderWidget(QWidget):
     def build_thumbnails(self):
         self.thumbnails.blockSignals(True)
         self.thumbnails.clear()
+        self._thumbnail_ready = set()
         if not self.doc:
             self.thumbnails.blockSignals(False)
             return
+        # Placeholders are cheap; thumbnails are rendered only for visible rows.
         for i in range(self.doc.page_count):
-            page = self.doc.load_page(i)
-            pix = page.get_pixmap(matrix=fitz.Matrix(0.20, 0.20), alpha=False)
-            image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888).copy()
             item = QListWidgetItem(str(i + 1))
-            item.setIcon(QIcon(QPixmap.fromImage(image)))
             item.setSizeHint(QSize(115, 158))
             item.setTextAlignment(Qt.AlignHCenter)
             self.thumbnails.addItem(item)
         self.thumbnails.setCurrentRow(self.page_index)
         self.thumbnails.blockSignals(False)
+        self.refresh_visible_thumbnails()
+
+    def refresh_visible_thumbnails(self, *_):
+        if not self.doc or not self.thumbnails.count():
+            return
+        first = self.thumbnails.indexAt(self.thumbnails.viewport().rect().topLeft()).row()
+        if first < 0:
+            first = max(0, self.page_index - 3)
+        last = min(self.thumbnails.count() - 1, first + 12)
+        keep = set(range(first, last + 1))
+        # Clear off-screen icons so thumbnail memory stays bounded.
+        for idx in self._thumbnail_ready - keep:
+            item = self.thumbnails.item(idx)
+            if item:
+                item.setIcon(QIcon())
+        self._thumbnail_ready.intersection_update(keep)
+        for idx in keep - self._thumbnail_ready:
+            page = self.doc.load_page(idx)
+            rect = page.rect
+            scale = min(0.16, 100.0 / max(rect.width, rect.height))
+            pix = page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+            image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888).copy()
+            item = self.thumbnails.item(idx)
+            if item:
+                item.setIcon(QIcon(QPixmap.fromImage(image)))
+                self._thumbnail_ready.add(idx)
 
     def render_page(self):
         if not self.doc:
