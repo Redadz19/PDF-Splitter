@@ -2,7 +2,7 @@ name: Build PDF Splitter for Windows
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/waraka-reader-first]
   workflow_dispatch:
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      - name: Generate WARAKA application icon
+      - name: Validate Python syntax\n        run: python -m py_compile main.py reader_widget.py updater.py make_update.py\n\n      - name: Generate WARAKA application icon
         run: python generate_icon.py
         env:
           QT_QPA_PLATFORM: offscreen
@@ -50,7 +50,7 @@ jobs:
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
-          name: PDF-Splitter-Windows-1.3.1
+          name: WARAKA-Windows-1.4.0
           path: installer/PDF-Splitter-Setup.exe
           if-no-files-found: error
           retention-days: 30
