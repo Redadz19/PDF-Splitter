@@ -11,12 +11,12 @@ from pypdf import PdfReader, PdfWriter
 import fitz
 from reader_widget import ReaderWidget
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.4.0"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
  "ar": {
-  "title":"ورقة | WARAKA", "subtitle":"قارئ PDF ومجموعة أدوات للصفحات", "reader_tab":"قارئ PDF", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"أدوات الصفحات", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
+  "title":"ورقة | WARAKA", "subtitle":"قارئ PDF ومجموعة أدوات للصفحات", "reader_tab":"قارئ PDF", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"أدوات الصفحات", "about_tab":"حول البرنامج", "about_title":"WARAKA | ورقة", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"قارئ PDF وأدوات صفحات، يعمل محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -32,7 +32,7 @@ TEXT = {
   "select":"اختر ملفات PDF", "badpdf":"تعذر فتح الملف: ", "selected_count":"صفحة محددة"
  },
  "en": {
-  "title":"WARAKA", "subtitle":"PDF reader and page tools", "reader_tab":"PDF Reader", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Page Tools", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
+  "title":"WARAKA", "subtitle":"PDF reader and page tools", "reader_tab":"PDF Reader", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Page Tools", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A PDF reader and page tools, processed locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -288,7 +288,7 @@ class App(QMainWindow):
 
     def retranslate(self):
         t=self.tr
-        self.setWindowTitle(t("title")); self.heading.setText("PDF Splitter" if self.lang=="en" else "PDF Splitter | مقسّم PDF")
+        self.setWindowTitle(t("title")); self.heading.setText("WARAKA" if self.lang=="en" else "ورقة | WARAKA")
         self.sub.setText(t("subtitle")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
         self.tabs.setTabText(0, t("reader_tab")); self.tabs.setTabText(1, t("main_tab")); self.tabs.setTabText(2, t("about_tab"))
         self.about_heading.setText(t("about_title")); self.about_description.setText(t("about_description"))
