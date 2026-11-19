@@ -2,7 +2,7 @@ import os, json
 from pathlib import Path
 import fitz
 from PySide6.QtCore import Qt, QSize, QSettings
-from PySide6.QtGui import QImage, QPixmap, QPainter, QPen, QIcon
+from PySide6.QtGui import QImage, QPixmap, QPainter, QPen, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
     QFileDialog, QScrollArea, QSlider, QListWidget, QListWidgetItem,
@@ -86,6 +86,23 @@ class ReaderWidget(QWidget):
         splitter.addWidget(self.scroll)
         splitter.setStretchFactor(1, 1)
         root.addWidget(splitter, 1)
+        # Keyboard shortcuts (no plain arrow keys to preserve text-field behavior).
+        self.shortcut_open = QShortcut(QKeySequence.Open, self)
+        self.shortcut_open.activated.connect(self.open_file)
+        self.shortcut_search = QShortcut(QKeySequence.Find, self)
+        self.shortcut_search.activated.connect(self.focus_search)
+        self.shortcut_next_page = QShortcut(QKeySequence('PageDown'), self)
+        self.shortcut_next_page.activated.connect(self.next_page)
+        self.shortcut_prev_page = QShortcut(QKeySequence('PageUp'), self)
+        self.shortcut_prev_page.activated.connect(self.previous_page)
+        self.shortcut_first_page = QShortcut(QKeySequence('Home'), self)
+        self.shortcut_first_page.activated.connect(self.first_page)
+        self.shortcut_last_page = QShortcut(QKeySequence('End'), self)
+        self.shortcut_last_page.activated.connect(self.last_page)
+        self.shortcut_zoom_in = QShortcut(QKeySequence('Ctrl++'), self)
+        self.shortcut_zoom_in.activated.connect(lambda: self.set_zoom(self.zoom + 0.15))
+        self.shortcut_zoom_out = QShortcut(QKeySequence('Ctrl+-'), self)
+        self.shortcut_zoom_out.activated.connect(lambda: self.set_zoom(self.zoom - 0.15))
         self.empty = QLabel()
         self.empty.setAlignment(Qt.AlignCenter)
         self.empty.setStyleSheet("color:#718096;font-size:16pt;padding:40px")
@@ -173,6 +190,20 @@ class ReaderWidget(QWidget):
         self.thumbnails.setCurrentRow(self.page_index)
         self.thumbnails.blockSignals(False)
         self.settings.setValue("last_page/" + self.path, self.page_index)
+
+    def focus_search(self):
+        self.search_edit.setFocus()
+        self.search_edit.selectAll()
+
+    def first_page(self):
+        if self.doc:
+            self.page_index = 0
+            self.render_page()
+
+    def last_page(self):
+        if self.doc:
+            self.page_index = self.doc.page_count - 1
+            self.render_page()
 
     def go_page(self, value):
         if self.doc:
