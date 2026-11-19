@@ -363,6 +363,7 @@ class App(QMainWindow):
     def change_language(self):
         self.lang=self.language.currentData()
         self.setLayoutDirection(Qt.RightToLeft if self.lang=="ar" else Qt.LeftToRight)
+        self.reader.set_language(self.lang)
         self.retranslate(); self.refresh_file_labels(); self.render_preview()
 
     def refresh_file_labels(self):
