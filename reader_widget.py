@@ -244,6 +244,8 @@ class ReaderWidget(QWidget):
         page_num, rect = self._search_hits[self._hit_cursor]
         self.page_index = page_num
         self.render_page()
-        # Scroll to the found text position (rendered page remains intact).
-        scaled_y = rect.y0 * self.zoom
+        # Scroll to the hit position in the rotated rendering coordinate system.
+        search_matrix = fitz.Matrix(self.zoom, self.zoom).prerotate(self.rotation)
+        transformed_rect = rect * search_matrix
+        scaled_y = transformed_rect.y0
         self.scroll.verticalScrollBar().setValue(max(0, int(scaled_y - 80)))
