@@ -18,6 +18,7 @@ class ReaderWidget(QWidget):
         self.path = ""
         self.page_index = 0
         self.zoom = 1.25
+        self.rotation = 0  # Viewer-only; never alters the source PDF.
         self.settings = QSettings("RedaDZ19", "WARAKA")
         self._search_hits = []
         self._hit_cursor = -1
@@ -46,6 +47,12 @@ class ReaderWidget(QWidget):
         self.zoom_in.clicked.connect(lambda: self.set_zoom(self.zoom + 0.15))
         self.fit_width = QPushButton()
         self.fit_width.clicked.connect(self.fit_to_width)
+        self.rotate_left = QPushButton('↶')
+        self.rotate_left.setToolTip('Rotate left / تدوير لليسار')
+        self.rotate_left.clicked.connect(lambda: self.rotate_page(-90))
+        self.rotate_right = QPushButton('↷')
+        self.rotate_right.setToolTip('Rotate right / تدوير لليمين')
+        self.rotate_right.clicked.connect(lambda: self.rotate_page(90))
         self.search_edit = QLineEdit()
         self.search_edit.returnPressed.connect(self.search_next)
         self.search_next_btn = QPushButton()
@@ -54,7 +61,7 @@ class ReaderWidget(QWidget):
         self.search_prev_btn.clicked.connect(self.search_previous)
         for w in [self.open_btn, self.prev_btn, self.page_spin, self.page_count, self.next_btn,
                   self.zoom_out, self.zoom_label, self.zoom_in, self.fit_width,
-                  self.search_edit, self.search_prev_btn, self.search_next_btn]:
+                  self.rotate_left, self.rotate_right, self.search_edit, self.search_prev_btn, self.search_next_btn]:
             toolbar.addWidget(w)
         toolbar.addStretch(1)
         root.addLayout(toolbar)
@@ -107,6 +114,7 @@ class ReaderWidget(QWidget):
             if self.doc:
                 self.doc.close()
             self.doc, self.path = new_doc, path
+            self.rotation = 0
             self.page_view.setText("")
             self._search_hits = []
             self._hit_cursor = -1
@@ -142,7 +150,8 @@ class ReaderWidget(QWidget):
         if not self.doc:
             return
         page = self.doc.load_page(self.page_index)
-        pix = page.get_pixmap(matrix=fitz.Matrix(self.zoom, self.zoom), alpha=False)
+        matrix = fitz.Matrix(self.zoom, self.zoom).prerotate(self.rotation)
+        pix = page.get_pixmap(matrix=matrix, alpha=False)
         image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888).copy()
         pixmap = QPixmap.fromImage(image)
         if self._search_hits and 0 <= self._hit_cursor < len(self._search_hits):
@@ -193,8 +202,15 @@ class ReaderWidget(QWidget):
             return
         page = self.doc.load_page(self.page_index)
         available = max(200, self.scroll.viewport().width() - 40)
-        self.zoom = max(0.35, min(4.0, available / page.rect.width))
+        page_width = page.rect.width if self.rotation % 180 == 0 else page.rect.height
+        self.zoom = max(0.35, min(4.0, available / page_width))
         self.render_page()
+
+    def rotate_page(self, degrees):
+        if not self.doc:
+            return
+        self.rotation = (self.rotation + degrees) % 360
+        self.fit_to_width()
 
     def search_next(self):
         self._search(True)
