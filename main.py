@@ -9,13 +9,14 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
     QScrollArea, QToolButton, QGridLayout, QTabWidget)
 from pypdf import PdfReader, PdfWriter
 import fitz
+from reader_widget import ReaderWidget
 
 APP_VERSION = "1.3.1"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
  "ar": {
-  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
+  "title":"ورقة | WARAKA", "subtitle":"قارئ PDF ومجموعة أدوات للصفحات", "reader_tab":"قارئ PDF", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"أدوات الصفحات", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -31,7 +32,7 @@ TEXT = {
   "select":"اختر ملفات PDF", "badpdf":"تعذر فتح الملف: ", "selected_count":"صفحة محددة"
  },
  "en": {
-  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
+  "title":"WARAKA", "subtitle":"PDF reader and page tools", "reader_tab":"PDF Reader", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Page Tools", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -242,7 +243,7 @@ class App(QMainWindow):
         bottom.addWidget(self.start)
         main_layout.addWidget(self.progress)
         main_layout.addLayout(bottom)
-        self.tabs.addTab(main_page, "")
+        self.tabs.addTab(main_page, "")\n        self.reader = ReaderWidget(self.lang)\n        self.tabs.insertTab(0, self.reader, "")
 
         about_page = QWidget()
         about_layout = QVBoxLayout(about_page)
@@ -289,7 +290,7 @@ class App(QMainWindow):
         t=self.tr
         self.setWindowTitle(t("title")); self.heading.setText("PDF Splitter" if self.lang=="en" else "PDF Splitter | مقسّم PDF")
         self.sub.setText(t("subtitle")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
-        self.tabs.setTabText(0, t("main_tab")); self.tabs.setTabText(1, t("about_tab"))
+        self.tabs.setTabText(0, t("reader_tab")); self.tabs.setTabText(1, t("main_tab")); self.tabs.setTabText(2, t("about_tab"))
         self.about_heading.setText(t("about_title")); self.about_description.setText(t("about_description"))
         self.about_version.setText(t("about_version") + APP_VERSION); self.about_publisher.setText(t("about_publisher"))
         self.about_website.setText(t("about_website") + '<a href="https://www.waraka.com">www.waraka.com</a>')
