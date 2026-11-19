@@ -160,8 +160,9 @@ class ReaderWidget(QWidget):
                 painter = QPainter(pixmap)
                 pen = QPen(Qt.red, max(2, int(2.5 * self.zoom)))
                 painter.setPen(pen)
-                painter.drawRect(int(hit_rect.x0 * self.zoom), int(hit_rect.y0 * self.zoom),
-                               max(2, int(hit_rect.width * self.zoom)), max(2, int(hit_rect.height * self.zoom)))
+                transformed = hit_rect * matrix
+                painter.drawRect(int(transformed.x0), int(transformed.y0),
+                               max(2, int(transformed.width)), max(2, int(transformed.height)))
                 painter.end()
         self.page_view.setPixmap(pixmap)
         self.page_spin.blockSignals(True)
