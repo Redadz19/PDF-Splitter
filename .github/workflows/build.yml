@@ -26,7 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
 
-      - name: Validate Python syntax\n        run: python -m py_compile main.py reader_widget.py updater.py make_update.py\n\n      - name: Generate WARAKA application icon
+      - name: Validate Python syntax
+        run: python -m py_compile main.py reader_widget.py updater.py make_update.py
+
+      - name: Generate WARAKA application icon
         run: python generate_icon.py
         env:
           QT_QPA_PLATFORM: offscreen
