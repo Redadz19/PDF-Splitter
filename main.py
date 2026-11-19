@@ -243,7 +243,9 @@ class App(QMainWindow):
         bottom.addWidget(self.start)
         main_layout.addWidget(self.progress)
         main_layout.addLayout(bottom)
-        self.tabs.addTab(main_page, "")\n        self.reader = ReaderWidget(self.lang)\n        self.tabs.insertTab(0, self.reader, "")
+        self.tabs.addTab(main_page, "")
+        self.reader = ReaderWidget(self.lang)
+        self.tabs.insertTab(0, self.reader, "")
 
         about_page = QWidget()
         about_layout = QVBoxLayout(about_page)
