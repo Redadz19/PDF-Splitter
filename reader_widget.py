@@ -2,7 +2,7 @@ import os, json
 from pathlib import Path
 import fitz
 from PySide6.QtCore import Qt, QSize, QSettings
-from PySide6.QtGui import QImage, QPixmap, QPainter, QPen
+from PySide6.QtGui import QImage, QPixmap, QPainter, QPen, QIcon
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
     QFileDialog, QScrollArea, QSlider, QListWidget, QListWidgetItem,
@@ -81,6 +81,7 @@ class ReaderWidget(QWidget):
         self.empty.setAlignment(Qt.AlignCenter)
         self.empty.setStyleSheet("color:#718096;font-size:16pt;padding:40px")
         root.addWidget(self.empty)
+        self.empty.setVisible(True)
 
     def set_language(self, language):
         self.language = language
@@ -105,6 +106,7 @@ class ReaderWidget(QWidget):
             if self.doc:
                 self.doc.close()
             self.doc, self.path = new_doc, path
+            self.empty.setVisible(False)
             self.page_spin.setRange(1, self.doc.page_count)
             self.page_count.setText(f"/ {self.doc.page_count}")
             saved = int(self.settings.value("last_page/" + path, 0))
@@ -125,7 +127,7 @@ class ReaderWidget(QWidget):
             pix = page.get_pixmap(matrix=fitz.Matrix(0.20, 0.20), alpha=False)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888).copy()
             item = QListWidgetItem(str(i + 1))
-            item.setIcon(QPixmap.fromImage(image))
+            item.setIcon(QIcon(QPixmap.fromImage(image)))
             item.setSizeHint(QSize(115, 158))
             item.setTextAlignment(Qt.AlignHCenter)
             self.thumbnails.addItem(item)
