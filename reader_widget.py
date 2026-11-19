@@ -2,7 +2,7 @@ import os, json
 from pathlib import Path
 import fitz
 from PySide6.QtCore import Qt, QSize, QSettings
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QPainter, QPen
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit,
     QFileDialog, QScrollArea, QSlider, QListWidget, QListWidgetItem,
@@ -138,7 +138,17 @@ class ReaderWidget(QWidget):
         page = self.doc.load_page(self.page_index)
         pix = page.get_pixmap(matrix=fitz.Matrix(self.zoom, self.zoom), alpha=False)
         image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888).copy()
-        self.page_view.setPixmap(QPixmap.fromImage(image))
+        pixmap = QPixmap.fromImage(image)
+        if self._search_hits and 0 <= self._hit_cursor < len(self._search_hits):
+            hit_page, hit_rect = self._search_hits[self._hit_cursor]
+            if hit_page == self.page_index:
+                painter = QPainter(pixmap)
+                pen = QPen(Qt.red, max(2, int(2.5 * self.zoom)))
+                painter.setPen(pen)
+                painter.drawRect(int(hit_rect.x0 * self.zoom), int(hit_rect.y0 * self.zoom),
+                               max(2, int(hit_rect.width * self.zoom)), max(2, int(hit_rect.height * self.zoom)))
+                painter.end()
+        self.page_view.setPixmap(pixmap)
         self.page_spin.blockSignals(True)
         self.page_spin.setValue(self.page_index + 1)
         self.page_spin.blockSignals(False)
@@ -199,7 +209,10 @@ class ReaderWidget(QWidget):
         if not self._search_hits:
             QMessageBox.information(self, "WARAKA", "No matches found." if self.language == "en" else "لم يتم العثور على نتائج.")
             return
-        self._hit_cursor = (self._hit_cursor + (1 if forward else -1)) % len(self._search_hits)
+        if self._hit_cursor < 0:
+            self._hit_cursor = 0 if forward else len(self._search_hits) - 1
+        else:
+            self._hit_cursor = (self._hit_cursor + (1 if forward else -1)) % len(self._search_hits)
         page_num, rect = self._search_hits[self._hit_cursor]
         self.page_index = page_num
         self.render_page()
