@@ -21,6 +21,7 @@ class ReaderWidget(QWidget):
         self.settings = QSettings("RedaDZ19", "WARAKA")
         self._search_hits = []
         self._hit_cursor = -1
+        self._last_search_phrase = ""
         self.build_ui()
         self.set_language(language)
 
@@ -72,7 +73,8 @@ class ReaderWidget(QWidget):
         self.scroll.setAlignment(Qt.AlignCenter)
         self.page_view = QLabel()
         self.page_view.setAlignment(Qt.AlignCenter)
-        self.page_view.setStyleSheet("background:#dfe6ed;padding:12px")
+        self.page_view.setStyleSheet("background:#dfe6ed;padding:12px;color:#718096;font-size:16pt")
+        self.page_view.setText("افتح ملف PDF للبدء بالقراءة")
         self.scroll.setWidget(self.page_view)
         splitter.addWidget(self.scroll)
         splitter.setStretchFactor(1, 1)
@@ -80,8 +82,7 @@ class ReaderWidget(QWidget):
         self.empty = QLabel()
         self.empty.setAlignment(Qt.AlignCenter)
         self.empty.setStyleSheet("color:#718096;font-size:16pt;padding:40px")
-        root.addWidget(self.empty)
-        self.empty.setVisible(True)
+        self.empty.setVisible(False)
 
     def set_language(self, language):
         self.language = language
@@ -91,7 +92,7 @@ class ReaderWidget(QWidget):
         self.search_edit.setPlaceholderText("بحث داخل الملف…" if ar else "Search in PDF…")
         self.search_prev_btn.setText("السابق" if ar else "Previous")
         self.search_next_btn.setText("التالي" if ar else "Next")
-        self.empty.setText("افتح ملف PDF للبدء بالقراءة" if ar else "Open a PDF to start reading")
+        self.page_view.setText("افتح ملف PDF للبدء بالقراءة" if ar else "Open a PDF to start reading")
         self.setLayoutDirection(Qt.RightToLeft if ar else Qt.LeftToRight)
 
     def open_file(self, path=None):
@@ -106,7 +107,10 @@ class ReaderWidget(QWidget):
             if self.doc:
                 self.doc.close()
             self.doc, self.path = new_doc, path
-            self.empty.setVisible(False)
+            self.page_view.setText("")
+            self._search_hits = []
+            self._hit_cursor = -1
+            self._last_search_phrase = ""
             self.page_spin.setRange(1, self.doc.page_count)
             self.page_count.setText(f"/ {self.doc.page_count}")
             saved = int(self.settings.value("last_page/" + path, 0))
@@ -189,7 +193,7 @@ class ReaderWidget(QWidget):
             return
         page = self.doc.load_page(self.page_index)
         available = max(200, self.scroll.viewport().width() - 40)
-        self.zoom = available / page.rect.width
+        self.zoom = max(0.35, min(4.0, available / page.rect.width))
         self.render_page()
 
     def search_next(self):
@@ -204,11 +208,16 @@ class ReaderWidget(QWidget):
         phrase = self.search_edit.text().strip()
         if not phrase:
             return
-        self._search_hits = []
-        for i in range(self.doc.page_count):
-            for rect in self.doc.load_page(i).search_for(phrase):
-                self._search_hits.append((i, rect))
+        # Re-scan only when the search phrase changes; next/previous reuses cached hits.
+        if phrase != self._last_search_phrase:
+            self._search_hits = []
+            self._hit_cursor = -1
+            self._last_search_phrase = phrase
+            for i in range(self.doc.page_count):
+                for rect in self.doc.load_page(i).search_for(phrase):
+                    self._search_hits.append((i, rect))
         if not self._search_hits:
+            self._hit_cursor = -1
             QMessageBox.information(self, "WARAKA", "No matches found." if self.language == "en" else "لم يتم العثور على نتائج.")
             return
         if self._hit_cursor < 0:
