@@ -1,6 +1,6 @@
 import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser, uuid
 from pathlib import Path
-from PySide6.QtCore import Qt, QSize, QRectF
+from PySide6.QtCore import Qt, QSize, QRectF, QTimer
 from PySide6.QtGui import QImage, QPixmap, QIcon, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -11,7 +11,8 @@ from pypdf import PdfReader, PdfWriter
 import fitz
 from reader_widget import ReaderWidget
 
-APP_VERSION = "1.4.0"
+VERSION_FILE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "version.txt"
+APP_VERSION = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
@@ -308,7 +309,7 @@ class App(QMainWindow):
         self.out_label.setText(t("out")); self.browse.setText(t("browse")); self.unique.setText(t("overwrite"))
         self.start.setText(t("start")); self.status.setText(t("status")); self.mode_changed()
 
-    def check_updates(self):
+    def check_updates(self, automatic=False):
         try:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             request = urllib.request.Request(
@@ -321,7 +322,8 @@ class App(QMainWindow):
             def version_tuple(value):
                 return tuple(int(part) for part in re.findall(r"\d+", value)[:3])
             if not latest or version_tuple(latest) <= version_tuple(APP_VERSION):
-                QMessageBox.information(self, self.tr("title"), self.tr("up_to_date"))
+                if not automatic:
+                    QMessageBox.information(self, self.tr("title"), self.tr("up_to_date"))
                 return
             answer = QMessageBox.question(
                 self, self.tr("title"),
@@ -360,7 +362,8 @@ class App(QMainWindow):
             self.close()
         except Exception as exc:
             self.about_update_button.setEnabled(True)
-            QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
+            if not automatic:
+                QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
 
     def change_language(self):
         self.lang=self.language.currentData()
@@ -498,5 +501,8 @@ class App(QMainWindow):
 
 if __name__=="__main__":
     app=QApplication(sys.argv); app.setApplicationName("PDF Splitter")
-    window=App(); window.show(); sys.exit(app.exec())
+    window=App(); window.show()
+    # Check silently shortly after startup; the user is prompted only when an update exists.
+    QTimer.singleShot(1800, lambda: window.check_updates(automatic=True))
+    sys.exit(app.exec())
 
