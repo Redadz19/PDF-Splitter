@@ -2,7 +2,7 @@ name: Build WARAKA for Windows
 
 on:
   push:
-    branches: [main, feature/waraka-reader-first, feature/waraka-auto-updates]
+    branches: [main, feature/waraka-reader-first, feature/waraka-auto-updates, feature/waraka-reader-layout]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -64,14 +64,27 @@ jobs:
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
           python make_update.py "dist\PDF Splitter" - "release-assets"
 
-      - name: Upload Windows build artifacts
+      - name: Upload WARAKA installer (for normal installation)
         uses: actions/upload-artifact@v4
         with:
-          name: WARAKA-Windows-${{ steps.version.outputs.value }}
-          path: |
-            installer/PDF-Splitter-Setup.exe
-            release-assets/PDF-Splitter-Full.zip
-            release-assets/PDF-Splitter-Update.zip
+          name: WARAKA-Setup-${{ steps.version.outputs.value }}
+          path: installer/PDF-Splitter-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload full portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: WARAKA-Full-${{ steps.version.outputs.value }}
+          path: release-assets/PDF-Splitter-Full.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload in-app update package
+        uses: actions/upload-artifact@v4
+        with:
+          name: WARAKA-Update-${{ steps.version.outputs.value }}
+          path: release-assets/PDF-Splitter-Update.zip
           if-no-files-found: error
           retention-days: 30
 

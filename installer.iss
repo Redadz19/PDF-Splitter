@@ -2,18 +2,18 @@
 #define MyAppVersion GetEnv("APP_VERSION")
 [Setup]
 AppId={{8A11E3CE-DF9A-4C6D-9F21-0E6B72A9B210}
-AppName=PDF Splitter
+AppName=WARAKA
 AppVersion={#MyAppVersion}
 AppPublisher=Riadh Terrouche. RedaDZ19
 AppCopyright=Copyright (C) 2026 Riadh Terrouche. RedaDZ19
 VersionInfoCompany=Riadh Terrouche. RedaDZ19
-VersionInfoDescription=PDF Splitter - PDF document splitting application
-VersionInfoProductName=PDF Splitter
+VersionInfoDescription=WARAKA - PDF reader and page tools
+VersionInfoProductName=WARAKA
 VersionInfoProductVersion={#MyAppVersion}
 VersionInfoVersion={#MyAppVersion}.0
-DefaultDirName={localappdata}\Programs\PDF Splitter
+DefaultDirName={localappdata}\Programs\WARAKA
 PrivilegesRequired=lowest
-DefaultGroupName=PDF Splitter
+DefaultGroupName=WARAKA
 OutputDir=installer
 OutputBaseFilename=PDF-Splitter-Setup
 Compression=lzma
@@ -26,8 +26,8 @@ SetupIconFile=assets\pdf_splitter.ico
 Source: "dist\PDF Splitter\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\PDF Splitter"; Filename: "{app}\PDF Splitter.exe"
-Name: "{autodesktop}\PDF Splitter"; Filename: "{app}\PDF Splitter.exe"; Tasks: desktopicon
+Name: "{group}\WARAKA"; Filename: "{app}\PDF Splitter.exe"
+Name: "{autodesktop}\WARAKA"; Filename: "{app}\PDF Splitter.exe"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
