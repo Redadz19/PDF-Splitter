@@ -65,15 +65,15 @@ class App(QMainWindow):
         self.resize(1380, 900)
         self.setMinimumSize(1100, 720)
         self.setStyleSheet("""
-        QMainWindow,QWidget { background:#f4f7fb; color:#17243a; font-family:'Segoe UI'; font-size:10.5pt; }
-        QGroupBox { background:white; border:1px solid #dce4ef; border-radius:12px; margin-top:12px; padding:12px; font-weight:600; }
+        QMainWindow,QWidget { background:#f2f3f5; color:#30343a; font-family:'Segoe UI'; font-size:10.5pt; }
+        QGroupBox { background:#fafafa; border:1px solid #d7dadd; border-radius:8px; margin-top:12px; padding:12px; font-weight:600; }
         QGroupBox::title { subcontrol-origin:margin; left:14px; padding:0 5px; }
-        QPushButton { background:#1769aa; color:white; border:0; border-radius:8px; padding:9px 15px; font-weight:600; }
-        QPushButton:hover { background:#0f568f; }
-        QPushButton:disabled { background:#aab8c8; }
-        QLineEdit,QComboBox,QSpinBox,QListWidget { background:white; border:1px solid #d4deea; border-radius:7px; padding:7px; }
-        QProgressBar { border:0; background:#e2eaf3; border-radius:5px; height:10px; text-align:center; }
-        QProgressBar::chunk { background:#22a06b; border-radius:5px; }
+        QPushButton { background:#e2e5e8; color:#30343a; border:1px solid #cbd0d5; border-radius:6px; padding:9px 15px; font-weight:600; }
+        QPushButton:hover { background:#d5d9dd; }
+        QPushButton:disabled { background:#eceeef; color:#9aa0a6; }
+        QLineEdit,QComboBox,QSpinBox,QListWidget { background:#ffffff; border:1px solid #d1d5d9; border-radius:6px; padding:7px; }
+        QProgressBar { border:0; background:#e2e4e7; border-radius:5px; height:10px; text-align:center; }
+        QProgressBar::chunk { background:#92999f; border-radius:5px; }
         """)
         self.build_ui()
         self.retranslate()
@@ -111,7 +111,7 @@ class App(QMainWindow):
         self.logo.setAlignment(Qt.AlignCenter)
         top.addWidget(self.logo)
         self.heading = QLabel()
-        self.heading.setStyleSheet("font-size:23pt;font-weight:700;color:#123b63")
+        self.heading.setStyleSheet("font-size:23pt;font-weight:700;color:#343a40")
         top.addWidget(self.heading)
         top.addStretch()
         self.language = QComboBox()
@@ -122,7 +122,7 @@ class App(QMainWindow):
         layout.addLayout(top)
 
         self.sub = QLabel()
-        self.sub.setStyleSheet("color:#63758b")
+        self.sub.setStyleSheet("color:#777f86")
         layout.addWidget(self.sub)
 
         # Main workspace is explicitly left-to-right: preview left, settings right.
@@ -139,7 +139,7 @@ class App(QMainWindow):
         self.preview_file.currentIndexChanged.connect(self.render_preview)
         preview_layout.addWidget(self.preview_file)
         self.preview_hint = QLabel()
-        self.preview_hint.setStyleSheet("color:#63758b")
+        self.preview_hint.setStyleSheet("color:#777f86")
         preview_layout.addWidget(self.preview_hint)
         self.preview_scroll = QScrollArea()
         self.preview_scroll.setWidgetResizable(True)
@@ -258,24 +258,24 @@ class App(QMainWindow):
             self.about_logo.setPixmap(self.render_logo(QSize(112, 150)))
         about_layout.addWidget(self.about_logo)
         self.about_heading = QLabel()
-        self.about_heading.setStyleSheet("font-size:25pt;font-weight:700;color:#123b63")
+        self.about_heading.setStyleSheet("font-size:25pt;font-weight:700;color:#343a40")
         self.about_heading.setAlignment(Qt.AlignCenter)
         about_layout.addWidget(self.about_heading)
         self.about_description = QLabel()
         self.about_description.setAlignment(Qt.AlignCenter)
-        self.about_description.setStyleSheet("font-size:12pt;color:#63758b")
+        self.about_description.setStyleSheet("font-size:12pt;color:#777f86")
         about_layout.addWidget(self.about_description)
         self.about_version = QLabel()
         self.about_version.setAlignment(Qt.AlignCenter)
-        self.about_version.setStyleSheet("font-size:11pt;font-weight:600;color:#1769aa")
+        self.about_version.setStyleSheet("font-size:11pt;font-weight:600;color:#656d75")
         about_layout.addWidget(self.about_version)
         self.about_publisher = QLabel()
         self.about_publisher.setAlignment(Qt.AlignCenter)
-        self.about_publisher.setStyleSheet("font-size:11pt;color:#334155")
+        self.about_publisher.setStyleSheet("font-size:11pt;color:#555d65")
         about_layout.addWidget(self.about_publisher)
         self.about_website = QLabel()
         self.about_website.setAlignment(Qt.AlignCenter)
-        self.about_website.setStyleSheet("font-size:11pt;color:#1769aa")
+        self.about_website.setStyleSheet("font-size:11pt;color:#656d75")
         self.about_website.setOpenExternalLinks(True)
         self.about_website.setTextInteractionFlags(Qt.TextBrowserInteraction)
         about_layout.addWidget(self.about_website)
@@ -500,7 +500,7 @@ class App(QMainWindow):
             self.start.setEnabled(True)
 
 if __name__=="__main__":
-    app=QApplication(sys.argv); app.setApplicationName("PDF Splitter")
+    app=QApplication(sys.argv); app.setApplicationName("WARAKA"); app.setApplicationDisplayName("WARAKA")
     window=App(); window.show()
     # Check silently shortly after startup; the user is prompted only when an update exists.
     QTimer.singleShot(1800, lambda: window.check_updates(automatic=True))
