@@ -1,6 +1,6 @@
 import sys, os, re, json, ssl, certifi, urllib.request, tempfile, subprocess, webbrowser, uuid
 from pathlib import Path
-from PySide6.QtCore import Qt, QSize, QRectF
+from PySide6.QtCore import Qt, QSize, QRectF, QTimer
 from PySide6.QtGui import QImage, QPixmap, QIcon, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -9,13 +9,15 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
     QScrollArea, QToolButton, QGridLayout, QTabWidget)
 from pypdf import PdfReader, PdfWriter
 import fitz
+from reader_widget import ReaderWidget
 
-APP_VERSION = "1.3.1"
+VERSION_FILE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "version.txt"
+APP_VERSION = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
  "ar": {
-  "title":"مقسّم ملفات PDF", "subtitle":"تقسيم ملفات PDF بسهولة وعلى جهازك", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"الرئيسية", "about_tab":"حول البرنامج", "about_title":"PDF Splitter", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"أداة لتقسيم ملفات PDF ومعاينتها محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
+  "title":"ورقة | WARAKA", "subtitle":"قارئ PDF ومجموعة أدوات للصفحات", "reader_tab":"قارئ PDF", "updates":"التحقق من التحديثات", "up_to_date":"أنت تستخدم أحدث إصدار.", "update_found":"يتوفر إصدار جديد: ", "update_confirm":"هل تريد تنزيل التحديث وتطبيقه الآن؟", "update_error":"تعذر التحقق من التحديثات: ", "updater_missing":"ملف التحديث غير موجود. أعد تثبيت أحدث نسخة كاملة.", "main_tab":"أدوات الصفحات", "about_tab":"حول البرنامج", "about_title":"WARAKA | ورقة", "about_version":"الإصدار: ", "about_publisher":"الناشر: Riadh Terrouche. RedaDZ19", "about_description":"قارئ PDF وأدوات صفحات، يعمل محلياً على جهازك.", "about_updates":"التحقق من وجود تحديثات", "about_website":"موقع الشركة: ",
   "add":"إضافة ملفات PDF", "remove":"إزالة المحدد", "clear":"مسح القائمة",
   "files":"الملفات المحددة", "mode":"طريقة التقسيم", "ranges":"حسب نطاقات الصفحات",
   "fixed":"عدد صفحات ثابت لكل ملف", "each":"كل صفحة في ملف مستقل",
@@ -31,7 +33,7 @@ TEXT = {
   "select":"اختر ملفات PDF", "badpdf":"تعذر فتح الملف: ", "selected_count":"صفحة محددة"
  },
  "en": {
-  "title":"PDF Splitter", "subtitle":"Split PDF files easily — processed locally on your computer", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Home", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A tool to split and preview PDF files locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
+  "title":"WARAKA", "subtitle":"PDF reader and page tools", "reader_tab":"PDF Reader", "updates":"Check for updates", "up_to_date":"You are using the latest version.", "update_found":"A new version is available: ", "update_confirm":"Download and install this update now?", "update_error":"Could not check for updates: ", "updater_missing":"Updater is missing. Install the latest full version again.", "main_tab":"Page Tools", "about_tab":"About", "about_title":"PDF Splitter", "about_version":"Version: ", "about_publisher":"Publisher: Riadh Terrouche. RedaDZ19", "about_description":"A PDF reader and page tools, processed locally on your computer.", "about_updates":"Check for updates", "about_website":"Company website: ",
   "add":"Add PDF files", "remove":"Remove selected", "clear":"Clear list",
   "files":"Selected files", "mode":"Splitting method", "ranges":"By page ranges",
   "fixed":"Fixed pages per file", "each":"Each page as a separate file",
@@ -243,6 +245,8 @@ class App(QMainWindow):
         main_layout.addWidget(self.progress)
         main_layout.addLayout(bottom)
         self.tabs.addTab(main_page, "")
+        self.reader = ReaderWidget(self.lang)
+        self.tabs.insertTab(0, self.reader, "")
 
         about_page = QWidget()
         about_layout = QVBoxLayout(about_page)
@@ -287,9 +291,9 @@ class App(QMainWindow):
 
     def retranslate(self):
         t=self.tr
-        self.setWindowTitle(t("title")); self.heading.setText("PDF Splitter" if self.lang=="en" else "PDF Splitter | مقسّم PDF")
+        self.setWindowTitle(t("title")); self.heading.setText("WARAKA" if self.lang=="en" else "ورقة | WARAKA")
         self.sub.setText(t("subtitle")); self.filebox.setTitle(t("files")); self.preview_box.setTitle(t("preview"))
-        self.tabs.setTabText(0, t("main_tab")); self.tabs.setTabText(1, t("about_tab"))
+        self.tabs.setTabText(0, t("reader_tab")); self.tabs.setTabText(1, t("main_tab")); self.tabs.setTabText(2, t("about_tab"))
         self.about_heading.setText(t("about_title")); self.about_description.setText(t("about_description"))
         self.about_version.setText(t("about_version") + APP_VERSION); self.about_publisher.setText(t("about_publisher"))
         self.about_website.setText(t("about_website") + '<a href="https://www.waraka.com">www.waraka.com</a>')
@@ -305,7 +309,7 @@ class App(QMainWindow):
         self.out_label.setText(t("out")); self.browse.setText(t("browse")); self.unique.setText(t("overwrite"))
         self.start.setText(t("start")); self.status.setText(t("status")); self.mode_changed()
 
-    def check_updates(self):
+    def check_updates(self, automatic=False):
         try:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             request = urllib.request.Request(
@@ -318,7 +322,8 @@ class App(QMainWindow):
             def version_tuple(value):
                 return tuple(int(part) for part in re.findall(r"\d+", value)[:3])
             if not latest or version_tuple(latest) <= version_tuple(APP_VERSION):
-                QMessageBox.information(self, self.tr("title"), self.tr("up_to_date"))
+                if not automatic:
+                    QMessageBox.information(self, self.tr("title"), self.tr("up_to_date"))
                 return
             answer = QMessageBox.question(
                 self, self.tr("title"),
@@ -357,11 +362,13 @@ class App(QMainWindow):
             self.close()
         except Exception as exc:
             self.about_update_button.setEnabled(True)
-            QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
+            if not automatic:
+                QMessageBox.warning(self, self.tr("title"), self.tr("update_error") + str(exc))
 
     def change_language(self):
         self.lang=self.language.currentData()
         self.setLayoutDirection(Qt.RightToLeft if self.lang=="ar" else Qt.LeftToRight)
+        self.reader.set_language(self.lang)
         self.retranslate(); self.refresh_file_labels(); self.render_preview()
 
     def refresh_file_labels(self):
@@ -494,5 +501,8 @@ class App(QMainWindow):
 
 if __name__=="__main__":
     app=QApplication(sys.argv); app.setApplicationName("PDF Splitter")
-    window=App(); window.show(); sys.exit(app.exec())
+    window=App(); window.show()
+    # Check silently shortly after startup; the user is prompted only when an update exists.
+    QTimer.singleShot(1800, lambda: window.check_updates(automatic=True))
+    sys.exit(app.exec())
 

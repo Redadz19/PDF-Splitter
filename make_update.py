@@ -5,7 +5,8 @@ import zipfile
 from pathlib import Path
 
 current = Path(sys.argv[1]).resolve()
-previous = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else None
+previous_arg = sys.argv[2] if len(sys.argv) > 2 else "-"
+previous = Path(previous_arg).resolve() if previous_arg != "-" else None
 out = Path(sys.argv[3]).resolve()
 out.mkdir(parents=True, exist_ok=True)
 
