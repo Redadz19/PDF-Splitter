@@ -23,12 +23,12 @@ painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
 # Recreate the supplied square app-icon treatment: white rounded tile,
 # blue outline, and the original vertical WARAKA mark centered without distortion.
-painter.setPen(QPen(QColor("#292fac"), 18))
+painter.setPen(QPen(QColor("#777f86"), 18))
 painter.setBrush(QBrush(QColor("#ffffff")))
 painter.drawRoundedRect(QRectF(40, 40, 944, 944), 110, 110)
 
 source_size = renderer.defaultSize()
-scale = min(240 / source_size.width(), 355 / source_size.height())
+scale = min(680 / source_size.width(), 780 / source_size.height())
 width = source_size.width() * scale
 height = source_size.height() * scale
 target = QRectF((size - width) / 2, (size - height) / 2, width, height)
