@@ -11,7 +11,8 @@ from pypdf import PdfReader, PdfWriter
 import fitz
 from reader_widget import ReaderWidget
 
-APP_VERSION = "1.4.0"
+VERSION_FILE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "version.txt"
+APP_VERSION = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
 GITHUB_LATEST_RELEASE = "https://api.github.com/repos/Redadz19/PDF-Splitter/releases/latest"
 
 TEXT = {
