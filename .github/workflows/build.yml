@@ -2,7 +2,7 @@ name: Build WARAKA for Windows
 
 on:
   push:
-    branches: [main, feature/waraka-reader-first, feature/waraka-auto-updates]
+    branches: [main, feature/waraka-reader-first, feature/waraka-auto-updates, feature/waraka-reader-layout]
     tags: ["v*"]
   workflow_dispatch:
 
